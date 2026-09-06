@@ -19,4 +19,10 @@ public static class DependencyInjection
 
         return services;
     }
+
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        return services;
+    }
+
 }
