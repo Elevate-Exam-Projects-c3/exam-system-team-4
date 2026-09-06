@@ -14,18 +14,18 @@ public class UnitOfWork : IUnitOfWork
     }
 
     // Transaction methods
-    public async Task BeginTransactionAsync()
+    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
-        _transaction = await _context.Database.BeginTransactionAsync();
+        _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
     }
 
-    public async Task CommitTransactionAsync()
+    public async Task CommitTransactionAsync(CancellationToken cancellationToken=default)
     {
         try
         {
             if (_transaction != null)
             {
-                await _transaction.CommitAsync();
+                await _transaction.CommitAsync( cancellationToken);
             }
         }
         finally
@@ -38,7 +38,7 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
-    public async Task RollbackTransactionAsync()
+    public async Task RollbackTransactionAsync(CancellationToken cancellationToken=default)
     {
         try
         {

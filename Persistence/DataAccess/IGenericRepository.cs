@@ -1,20 +1,17 @@
-using System.Linq.Expressions;
 using exam_system.Domain.Common;
+using System.Linq.Expressions;
 
 namespace exam_system.Persistence.DataAccess;
 
 public interface IGenericRepository<T> where T : BaseEntity
 {
-    Task<T?> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includes);
+    Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken, params Expression<Func<T, object>>[] includes);
     IQueryable<T> GetAll();
     IQueryable<T> Get(Expression<Func<T, bool>> predicate);
-    Task AddAsync(T entity);
-    Task AddRangeAsync(IEnumerable<T> entities);
+    void Add(T entity);
+    void AddRange(IEnumerable<T> entities);
     void Update(T entity);
-    Task UpdateAsync(T entity);
     void Delete(T entity);
-    Task DeleteAsync(T entity);
     void HardDelete(T entity);
-    void DeleteRange(IEnumerable<T> entities);
-    Task<int> CountAsync(Expression<Func<T, bool>>? criteria = null);
+    Task<int> CountAsync(CancellationToken cancellationToken, Expression<Func<T, bool>>? criteria = null);
 }
