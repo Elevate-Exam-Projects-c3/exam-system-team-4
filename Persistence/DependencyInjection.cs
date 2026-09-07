@@ -1,6 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+using exam_system.Features;
 using exam_system.Persistence.Context;
 using exam_system.Persistence.DataAccess;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace exam_system.Persistence;
 
@@ -22,6 +24,7 @@ public static class DependencyInjection
 
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
+        builder.Services.AddMediatR(typeof(MidiatrAssembly).Assembly);
         return services;
     }
 
