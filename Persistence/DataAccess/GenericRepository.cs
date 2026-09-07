@@ -17,7 +17,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         _dbSet = _context.Set<T>();
     }
 
-    public async Task<T?> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includes)
+    public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken, params Expression<Func<T, object>>[] includes)
     {
         IQueryable<T> query = _dbSet;
 
@@ -26,7 +26,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
             query = query.Include(include);
         }
 
-        return await query.FirstOrDefaultAsync(e => e.Id == id);
+        return await query.FirstOrDefaultAsync(e => e.Id == id,  cancellationToken);
     }
 
     public IQueryable<T> GetAll()
@@ -39,14 +39,14 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         return _dbSet.Where(predicate);
     }
 
-    public async Task AddAsync(T entity)
+    public void  Add(T entity)
     {
-        await _dbSet.AddAsync(entity);
+         _dbSet.Add(entity);
     }
 
-    public async Task AddRangeAsync(IEnumerable<T> entities)
+    public void AddRange(IEnumerable<T> entities)
     {
-        await _dbSet.AddRangeAsync(entities);
+         _dbSet.AddRange(entities);
     }
 
     public void Update(T entity)
@@ -74,31 +74,21 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
 
     public void DeleteRange(IEnumerable<T> entities)
     {
-        foreach (var entity in entities)
-        {
-            Delete(entity); // Use soft delete for range as well
-        }
+        _context.RemoveRange(entities);
     }
 
-    public async Task<int> CountAsync(Expression<Func<T, bool>>? criteria = null)
+    public async Task<int> CountAsync(CancellationToken cancellationToken,Expression<Func<T, bool>>? criteria = null)
     {
         if (criteria == null)
         {
-            return await _dbSet.CountAsync();
+            return await _dbSet.CountAsync(cancellationToken);
         }
 
-        return await _dbSet.CountAsync(criteria);
+        return await _dbSet.CountAsync(criteria,cancellationToken);
     }
 
-    public Task UpdateAsync(T entity)
-    {
-        _context.Entry(entity).State = EntityState.Modified;
-        return Task.CompletedTask;
-    }
+    
 
-    public Task DeleteAsync(T entity)
-    {
-        Delete(entity); // Use soft delete
-        return Task.CompletedTask;
-    }
+    
+
 }
