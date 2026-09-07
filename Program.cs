@@ -15,10 +15,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddPersistenceServices(builder.Configuration);
 
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
-});
+
 
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
