@@ -1,18 +1,13 @@
 using exam_system.Common.Enums;
-using exam_system.Domain.Common;
+using Microsoft.AspNetCore.Identity;
 
 namespace exam_system.Domain.Entities.Identity;
 
-public class ApplicationUser : BaseEntity
+public class ApplicationUser : IdentityUser
 {
     public string FullName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty;
-    public UserRole Role { get; set; } = UserRole.Student;
+   
     public AccountStatus AccountStatus { get; set; } = AccountStatus.Pending;
-    public bool EmailConfirmed { get; set; } = false;
-    public int FailedLoginAttempts { get; set; } = 0;
-    public DateTime? LockoutEnd { get; set; }
 
     // Navigation for 1-to-1 relationship with Student
     public Student? Student { get; set; }
