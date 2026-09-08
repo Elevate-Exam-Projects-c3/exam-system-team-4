@@ -17,7 +17,7 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Controllers
             _mediator = mediator;
         }
 
-        [HttpPost("create")]
+        [HttpPost("api/admin/quizzes")]
         public async Task<IActionResult> CreateQuiz([FromBody] CreateQuizViewModel viewModel,CancellationToken cancellationToken)
         {
             var requestResult=await _mediator.Send(new CreateQuizCommand(
