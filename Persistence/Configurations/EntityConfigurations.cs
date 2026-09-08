@@ -155,6 +155,14 @@ public class QuizConfiguration : IEntityTypeConfiguration<Quiz>
         builder.Property(quiz => quiz.Status)
                 .HasDefaultValue(QuizStatus.Draft);
 
+        //Dates
+        builder.ToTable("Quizzes", table =>
+        {
+            table.HasCheckConstraint(
+                "CK_Quiz_EndDate_After_StartDate",
+                "[EndDate] > [StartDate]");
+        });
+
         builder.HasOne(q => q.Diploma)
             .WithMany(d => d.Quizzes)
             .HasForeignKey(q => q.DiplomaId)
