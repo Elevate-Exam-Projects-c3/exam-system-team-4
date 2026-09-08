@@ -18,12 +18,9 @@ namespace exam_system.Features.Diplomas.AdminDeleteDiploma.Controllers
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> DeleteDiploma(Guid id)
         {
-            var command = new DeleteDiplomaCommand { Id = id };
-            var result = await _mediator.Send(command);
-            if (!result)
-            {
-                return NotFound();
-            }
+            
+            var result = await _mediator.Send(new DeleteDiplomaCommand(id));
+            
             return Ok("Diploma deleted successfully.");
         }
     }

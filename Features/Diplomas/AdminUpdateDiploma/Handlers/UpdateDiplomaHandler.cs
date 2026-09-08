@@ -6,7 +6,7 @@ using MediatR;
 
 namespace exam_system.Features.Diplomas.AdminUpdateDiploma.Handlers
 {
-    public class UpdateDiplomaHandler : IRequestHandler<UpdateDiplomaCommand, UpdateDiplomaDto>
+    public class UpdateDiplomaHandler : IRequestHandler<UpdateDiplomaCommand, Unit>
     {
         #region Dependency Injection
         //get diploma form database using GenericRepository 
@@ -23,7 +23,7 @@ namespace exam_system.Features.Diplomas.AdminUpdateDiploma.Handlers
         #endregion
 
 
-        public async Task<UpdateDiplomaDto> Handle(UpdateDiplomaCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(UpdateDiplomaCommand request, CancellationToken cancellationToken)
 
         {
             //get diploma by id 
@@ -46,11 +46,7 @@ namespace exam_system.Features.Diplomas.AdminUpdateDiploma.Handlers
                 cancellationToken);
 
             //then return the updated diploma as UpdateDiplomaDto
-            return new UpdateDiplomaDto
-            {
-                Title = diploma.Title,
-                Description = diploma.Description
-            };
+            return Unit.Value;
 
         }
     }

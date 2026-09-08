@@ -7,7 +7,7 @@ using MediatR;
 namespace exam_system.Features.Diplomas.AdminCreateDiploma.Handlers
 {
     //create handler for creating a diploma command that returns the id (unique) of the created diploma
-    public class CreateDiplomaCommandHandler : IRequestHandler<CreateDiplomaCommand, CreateDiplomaDto>
+    public class CreateDiplomaCommandHandler : IRequestHandler<CreateDiplomaCommand, Unit>
     {
 
         #region Dependency Injection
@@ -26,7 +26,7 @@ namespace exam_system.Features.Diplomas.AdminCreateDiploma.Handlers
 
 
         //handle method is the method that will be called when the command is sent to the mediator _mediator.send() , it will call the orchestrator to create the diploma and return the id of the created diploma
-        public async Task<CreateDiplomaDto> Handle(CreateDiplomaCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(CreateDiplomaCommand request, CancellationToken cancellationToken)
         {
             if (request.Title != null || request.Title.Length > 3)
             {
@@ -49,11 +49,7 @@ namespace exam_system.Features.Diplomas.AdminCreateDiploma.Handlers
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 //step 4 : return the created diploma
-                return new CreateDiplomaDto
-                {
-                    Title = diploma.Title,
-                    Description = diploma.Description
-                };
+               return Unit.Value;
             }
 
             else

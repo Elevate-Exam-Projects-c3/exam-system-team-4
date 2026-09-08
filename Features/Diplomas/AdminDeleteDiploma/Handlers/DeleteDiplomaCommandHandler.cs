@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace exam_system.Features.Diplomas.AdminDeleteDiploma.Handlers
 {
-    public class DeleteDiplomaCommandHandler : IRequestHandler<DeleteDiplomaCommand, bool>
+    public class DeleteDiplomaCommandHandler : IRequestHandler<DeleteDiplomaCommand, Unit>
     {
         private readonly IGenericRepository<Diploma> _repository;
         private readonly IUnitOfWork _unitOfWork;
@@ -17,7 +17,7 @@ namespace exam_system.Features.Diplomas.AdminDeleteDiploma.Handlers
             _repository = repository;
             _unitOfWork = unitOfWork;
         }
-        public async Task<bool> Handle(DeleteDiplomaCommand request, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(DeleteDiplomaCommand request, CancellationToken cancellationToken)
         {
             var diploma = await _repository.GetByIdAsync(request.Id , cancellationToken);
 
@@ -25,6 +25,7 @@ namespace exam_system.Features.Diplomas.AdminDeleteDiploma.Handlers
             { 
                 throw new Exception("Diploma Not Found");
             }
+
             if (diploma.Enrollments.Any()) 
             { 
                 throw new Exception("Cannot delete diploma with active enrollments");
@@ -35,7 +36,7 @@ namespace exam_system.Features.Diplomas.AdminDeleteDiploma.Handlers
             diploma.UpdatedAt = DateTime.Now;
 
            await _unitOfWork.SaveChangesAsync(cancellationToken);
-           return true;
+           return Unit.Value;
 
         }
 
