@@ -24,7 +24,7 @@ namespace exam_system.Features.Diplomas.AdminCreateDiploma.Controllers
       
 
         [HttpPost]
-        public async Task<IActionResult> Handle([FromBody] UpdateDiplomaViewModel viewModel)
+        public async Task<IActionResult> CreateDiploma([FromBody] UpdateDiplomaViewModel viewModel)
         {
            
             //send method here excute the request then the handler will be called to handle the request and return the result
