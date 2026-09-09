@@ -567,8 +567,6 @@ namespace exam_system.Migrations
                         {
                             t.HasCheckConstraint("CK_Quiz_DurationMinutes_Positive", "[DurationMinutes] > 0");
 
-                            t.HasCheckConstraint("CK_Quiz_EndDate_After_StartDate", "[EndDate] > [StartDate]");
-
                             t.HasCheckConstraint("CK_Quiz_PassScore_Range", "[PassScore] >= 0 AND [PassScore] <= 100");
 
                             t.HasCheckConstraint("CK_Quiz_Title_MinLength", "LEN([Title]) >= 3");

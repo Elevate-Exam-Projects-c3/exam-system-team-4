@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace exam_system.Migrations
 {
     /// <inheritdoc />
-    public partial class AddQuizStartAndEndDatesWithConstraint : Migration
+    public partial class AddQuizStartAndEndDates : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -24,20 +24,11 @@ namespace exam_system.Migrations
                 type: "datetime2",
                 nullable: false,
                 defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
-
-            migrationBuilder.AddCheckConstraint(
-                name: "CK_Quiz_EndDate_After_StartDate",
-                table: "Quizzes",
-                sql: "[EndDate] > [StartDate]");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropCheckConstraint(
-                name: "CK_Quiz_EndDate_After_StartDate",
-                table: "Quizzes");
-
             migrationBuilder.DropColumn(
                 name: "EndDate",
                 table: "Quizzes");

@@ -12,8 +12,8 @@ using exam_system.Persistence.Context;
 namespace exam_system.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260908212724_AddQuizStartAndEndDatesWithConstraint")]
-    partial class AddQuizStartAndEndDatesWithConstraint
+    [Migration("20260909004352_AddQuizStartAndEndDates")]
+    partial class AddQuizStartAndEndDates
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -569,8 +569,6 @@ namespace exam_system.Migrations
                     b.ToTable("Quizzes", null, t =>
                         {
                             t.HasCheckConstraint("CK_Quiz_DurationMinutes_Positive", "[DurationMinutes] > 0");
-
-                            t.HasCheckConstraint("CK_Quiz_EndDate_After_StartDate", "[EndDate] > [StartDate]");
 
                             t.HasCheckConstraint("CK_Quiz_PassScore_Range", "[PassScore] >= 0 AND [PassScore] <= 100");
 
