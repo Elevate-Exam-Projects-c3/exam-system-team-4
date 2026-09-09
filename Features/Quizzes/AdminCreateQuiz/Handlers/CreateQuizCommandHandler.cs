@@ -25,7 +25,23 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Handlers
         {
             //Validate dates
             //
-            if (IsEndDateBeforeOrEqualToStartDate(request.StartDate,request.EndDate))
+            if (request.StartDate < DateTime.UtcNow || request.EndDate <= DateTime.UtcNow)
+            {
+                var errors = new Dictionary<string, string[]>();
+                if (request.StartDate < DateTime.UtcNow)
+                {
+                    errors.Add("StartDate", ["Start date must be in the future."]);
+                }
+                if (request.EndDate <= DateTime.UtcNow)
+                {
+                    errors.Add("EndDate", ["End date must be after start date."]);
+                }
+                return RequestResponse.Fail(
+                                 "Invalid quiz dates.",
+                                  400,
+                                  errors);
+            }
+            if (IsEndDateBeforeOrEqualToStartDate(request.StartDate, request.EndDate))
             {
 
                 return RequestResponse.Fail(
@@ -37,7 +53,7 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Handlers
                         });
             }
             //
-            if (IsDurationMinutesExceedingDateRange(request.StartDate,request.EndDate,request.DurationMinutes))
+            if (IsDurationMinutesExceedingDateRange(request.StartDate, request.EndDate, request.DurationMinutes))
             {
                 return RequestResponse.Fail(
                         "Duration cannot exceed the time between start date and end date.",
@@ -83,9 +99,9 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Handlers
         {
             return endDate <= startDate;
         }
-        private bool IsDurationMinutesExceedingDateRange(DateTime startDate, DateTime endDate,int durationMinutes)
+        private bool IsDurationMinutesExceedingDateRange(DateTime startDate, DateTime endDate, int durationMinutes)
         {
-            return  (endDate - startDate).TotalMinutes < durationMinutes; ;
+            return (endDate - startDate).TotalMinutes < durationMinutes; ;
         }
 
     }

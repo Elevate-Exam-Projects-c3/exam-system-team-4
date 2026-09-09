@@ -22,6 +22,22 @@ namespace exam_system.Features.Quizzes.AdminUpdateQuiz.Handlers
         {
             //Validate dates
             //
+            if (request.StartDate < DateTime.UtcNow || request.EndDate <= DateTime.UtcNow)
+            {
+                var errors = new Dictionary<string, string[]>();
+                if (request.StartDate < DateTime.UtcNow)
+                {
+                    errors.Add("StartDate", ["Start date must be in the future."]);
+                }
+                if (request.EndDate <= DateTime.UtcNow)
+                {
+                    errors.Add("EndDate", ["End date must be after start date."]);
+                }
+                return RequestResponse.Fail(
+                                 "Invalid quiz dates.",
+                                  400,
+                                  errors);
+            }
             if (IsEndDateBeforeOrEqualToStartDate(request.StartDate, request.EndDate))
             {
 
