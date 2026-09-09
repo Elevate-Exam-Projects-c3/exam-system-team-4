@@ -13,7 +13,7 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Validators
 
             RuleFor(quiz => quiz.Instructions)
                 .MaximumLength(2000).WithMessage("Instructions Length Mustn't Be Greater than 2000 Character")
-                .When(quiz=>!string.IsNullOrWhiteSpace(quiz.Instructions));
+                .When(quiz => !string.IsNullOrWhiteSpace(quiz.Instructions));
 
             RuleFor(quiz => quiz.DurationMinutes)
                 .NotEmpty()
@@ -21,11 +21,19 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Validators
 
             RuleFor(quiz => quiz.PassScore)
                 .InclusiveBetween(1, 100);
-                
+
 
             RuleFor(quiz => quiz.MaxAttempts)
                 .GreaterThan(0)
                 .When(x => x.MaxAttempts.HasValue);
+
+            RuleFor(quiz => quiz.StartDate)
+           .NotEmpty();
+
+            RuleFor(quiz => quiz.EndDate)
+           .NotEmpty()
+           .GreaterThan(quiz => quiz.StartDate)
+           .WithMessage("End date must be after start date.");
 
         }
     }

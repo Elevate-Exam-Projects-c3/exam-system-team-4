@@ -14,7 +14,7 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Handlers
         private readonly IMediator _mediator;
         private readonly IUnitOfWork _unitOfWork;
 
-        public CreateQuizCommandHandler(IGenericRepository<Quiz> quizRepo, IMediator mediator,IUnitOfWork unitOfWork)
+        public CreateQuizCommandHandler(IGenericRepository<Quiz> quizRepo, IMediator mediator, IUnitOfWork unitOfWork)
         {
             _mediator = mediator;
             _unitOfWork = unitOfWork;
@@ -23,6 +23,30 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Handlers
 
         public async Task<RequestResponse> Handle(CreateQuizCommand request, CancellationToken cancellationToken)
         {
+            //Validate dates
+            //
+            if (IsEndDateBeforeOrEqualToStartDate(request.StartDate,request.EndDate))
+            {
+
+                return RequestResponse.Fail(
+                        "End date must be after start date.",
+                        400,
+                        new Dictionary<string, string[]>
+                        {
+                             { "EndDate", ["End date must be after start date."] }
+                        });
+            }
+            //
+            if (IsDurationMinutesExceedingDateRange(request.StartDate,request.EndDate,request.DurationMinutes))
+            {
+                return RequestResponse.Fail(
+                        "Duration cannot exceed the time between start date and end date.",
+                        400,
+                        new Dictionary<string, string[]>
+                        {
+                             { "DurationMinutes", ["Duration cannot exceed the time between start date and end date."] }
+                        });
+            }
             //is deploma exist
             var isDiplomaExist = (await _mediator.Send(new CheckDiplomaExistenceById(request.DiplomaId), cancellationToken)).Data;
             if (!isDiplomaExist)
@@ -47,13 +71,22 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Handlers
                 Status = QuizStatus.Draft,
                 CreatedAt = DateTime.UtcNow
             });
-            var result=await _unitOfWork.SaveChangesAsync(cancellationToken);
-            if(result>0)
-            return RequestResponse.Ok();
+            var result = await _unitOfWork.SaveChangesAsync(cancellationToken);
+            if (result > 0)
+                return RequestResponse.Ok();
             else
-                return RequestResponse.Fail("Failed to create => 500 ",500);
+                return RequestResponse.Fail("Failed to create => 500 ", 500);
 
             //
         }
+        private bool IsEndDateBeforeOrEqualToStartDate(DateTime startDate, DateTime endDate)
+        {
+            return endDate <= startDate;
+        }
+        private bool IsDurationMinutesExceedingDateRange(DateTime startDate, DateTime endDate,int durationMinutes)
+        {
+            return  (endDate - startDate).TotalMinutes < durationMinutes; ;
+        }
+
     }
 }
