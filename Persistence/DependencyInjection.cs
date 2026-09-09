@@ -1,4 +1,9 @@
 using exam_system.Domain.Entities.Identity;
+using exam_system.Features;
+using exam_system.Features.Shared.Behaviors;
+using exam_system.Features.Shared.PostCommit;
+using exam_system.Helper;
+using exam_system.Infrastructure.Email;
 using exam_system.Persistence.Context;
 using exam_system.Persistence.DataAccess;
 using FluentValidation;
@@ -24,14 +29,28 @@ public static class DependencyInjection
 
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        // store notification in ram 
+        services.AddScoped<IPostCommitStore, PostCommitStore>();
+        services.AddScoped<IPostCommitDispatcher, PostCommitDispatcher>();
+        services.AddScoped<IEmailSender, EmailSender>();
+        // hach otp
+        services.AddScoped<IPasswordHasher<EmailVerificationOtp>, PasswordHasher<EmailVerificationOtp>>();
 
         return services;
     }
 
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        // MediatR
-        services.AddMediatR(typeof(Program).Assembly);
+        //MediatR
+        // اكتشاف الـ Handlers والـ Orchestrators
+        services.AddMediatR(typeof(MidiatrAssembly).Assembly);
+
+        // ترتيب الـ Pipeline
+        services.AddTransient(typeof(IPipelineBehavior<,>),typeof(ValidationBehavior<,>));
+
+        services.AddTransient(typeof(IPipelineBehavior<,>),typeof(TransactionBehavior<,>));
+      
+
         return services;
     }
 

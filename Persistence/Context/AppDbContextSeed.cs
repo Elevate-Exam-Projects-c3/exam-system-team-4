@@ -1,9 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using exam_system.Common.Enums;
-using exam_system.Domain.Entities.Identity;
+using exam_system.Domain.Entities.Attempts;
 using exam_system.Domain.Entities.Diplomas;
 using exam_system.Domain.Entities.Quizzes;
-using exam_system.Domain.Entities.Attempts;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace exam_system.Persistence.Context;
 
@@ -13,7 +13,7 @@ public static class AppDbContextSeed
     {
         try
         {
-            
+
 
             // 2. Seed Diplomas
             if (!await context.Diplomas.AnyAsync())
@@ -288,12 +288,26 @@ public static class AppDbContextSeed
 
                 await context.SaveChangesAsync();
                 logger.LogInformation("Database seeded successfully with all domain entities!");
+
             }
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "An error occurred while seeding the database: {Message}", ex.Message);
             throw;
+        }
+    }
+    // create student role
+    public static class IdentitySeeder
+    {
+        public static async Task SeedRolesAsync(
+            RoleManager<IdentityRole> roleManager)
+        {
+            const string studentRole = "Student";
+            if (!await roleManager.RoleExistsAsync(studentRole))
+            {
+                await roleManager.CreateAsync( new IdentityRole(studentRole));
+            }
         }
     }
 }

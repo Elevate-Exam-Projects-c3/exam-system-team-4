@@ -1,8 +1,11 @@
-﻿using exam_system.Common.Enums;
+﻿using System.Security.Cryptography;
+using exam_system.Common.Enums;
 using exam_system.Domain.Entities.Identity;
 using exam_system.Features.Identity.Register.Commands;
+using exam_system.Features.Identity.Register.Notification;
 using exam_system.Features.Identity.Register.Responses;
 using exam_system.Features.Shared;
+using exam_system.Features.Shared.PostCommit;
 using exam_system.Persistence.DataAccess;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -10,22 +13,28 @@ using Microsoft.AspNetCore.Identity;
 namespace exam_system.Features.Identity.Register.Orchestrators
 {
     public class RegisterOrchestrator
-     : IRequestHandler<RegisterCommand, ApiResponse<RegisterResponse>>
+    : IRequestHandler<RegisterCommand,RequestResponse<RegisterResponse>>
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IGenericRepository<Student> _students;
         private readonly IGenericRepository<EmailVerificationOtp> _otpRepository;
+        private readonly IPasswordHasher<EmailVerificationOtp> _otpHasher;
+        private readonly IPostCommitStore _postCommitStore;
 
         public RegisterOrchestrator(
             UserManager<ApplicationUser> userManager,IGenericRepository<Student> studentrepo,
-            IGenericRepository<EmailVerificationOtp> otpRepository)
+            IGenericRepository<EmailVerificationOtp> otpRepository, IPasswordHasher<EmailVerificationOtp> otpHasher,
+            IPostCommitStore postCommitStore
+            )
         {
             _userManager = userManager;
             _students = studentrepo;
             _otpRepository = otpRepository;
+            _otpHasher = otpHasher;
+            _postCommitStore = postCommitStore;
         }
 
-        public async Task<ApiResponse<RegisterResponse>> Handle(RegisterCommand request,
+        public async Task<RequestResponse<RegisterResponse>> Handle(RegisterCommand request,
             CancellationToken cancellationToken)
         {
             // 1) Check duplicate email
@@ -34,7 +43,7 @@ namespace exam_system.Features.Identity.Register.Orchestrators
 
             if (existingUser is not null)
             {
-                return ApiResponse<RegisterResponse>.Fail("Email already registered",409);
+                return DuplicateEmail();
             }
 
             // 2) Create ApplicationUser 
@@ -61,7 +70,11 @@ namespace exam_system.Features.Identity.Register.Orchestrators
             {
                 var errors = createUserResult.Errors.Select(e => e.Description).ToArray();
 
-                return ApiResponse<RegisterResponse>.Fail("Registration failed",400);
+                return RequestResponse<RegisterResponse>.Fail("Registration failed",400,
+                    new Dictionary<string, string[]>
+                    {
+                        ["identity"]= errors
+                    });
             }
             // add role to user 
 
@@ -71,9 +84,13 @@ namespace exam_system.Features.Identity.Register.Orchestrators
 
             if (!addRoleResult.Succeeded)
             {
-                var errors = createUserResult.Errors.Select(e => e.Description).ToArray();
+                var errors = addRoleResult.Errors.Select(e => e.Description).ToArray();
 
-                return ApiResponse<RegisterResponse>.Fail("Failed to assign Student role", 500);
+                return RequestResponse<RegisterResponse>.Fail("Failed to assign Student role", 500,
+                    new Dictionary<string, string[]>
+                {
+                    ["Identity"] = errors
+                });
             }
             // create student 
             var student = new Student
@@ -82,9 +99,43 @@ namespace exam_system.Features.Identity.Register.Orchestrators
             };
 
             _students.Add(student);
+            // generate otp 
+            var plainOTP = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
 
+            // Create OTP entity
+            var otpEntity = new EmailVerificationOtp
+            {
+                UserId = user.Id,
+                Email = request.Email.Trim(),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+                AttemptCount = 0,
+                IsUsed = false
+            };
 
-               throw new NotImplementedException();
+            // Hash plain OTP
+            otpEntity.OtpHash = _otpHasher.HashPassword(otpEntity,plainOTP);
+
+            // Add OTP hash to DbContext
+            _otpRepository.Add(otpEntity);
+            // store notification 
+            _postCommitStore.Add(new SendVerificationOtpNotification(Email:user.Email ,FullName: user.FullName,Otp: plainOTP));
+            // respone 
+            return RequestResponse<RegisterResponse>.Ok(
+                new RegisterResponse
+                {
+                    Email = user.Email,
+                    EmailConfirmed = false
+                },
+                "Account created. Check your email to verify your account.",
+                201);
+
         }
+        private static RequestResponse<RegisterResponse> DuplicateEmail()
+        {
+            return RequestResponse<RegisterResponse>.Fail(
+                "Email already registered",
+                409);
+        }
+
     }
 }
