@@ -1,5 +1,5 @@
 ﻿using exam_system.Features.Identity.Register.Commands;
-using exam_system.Features.Identity.Register.Responses;
+using exam_system.Features.Identity.Register.Dtos.response;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

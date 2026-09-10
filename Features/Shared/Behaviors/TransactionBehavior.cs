@@ -1,5 +1,4 @@
 ﻿using exam_system.Features.Shared.Cqrs;
-using exam_system.Features.Shared.PostCommit;
 using exam_system.Persistence.DataAccess;
 using MediatR;
 
@@ -10,15 +9,12 @@ namespace exam_system.Features.Shared.Behaviors
      where TRequest : ITransactionalCommand<TResponse>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IPostCommitDispatcher _postCommitDispatcher;
-        private readonly IPostCommitStore _postCommitStore;
+       
 
-        public TransactionBehavior(IUnitOfWork unitOfWork, IPostCommitDispatcher postCommitDispatcher
-            ,IPostCommitStore postCommitStore)
+        public TransactionBehavior(IUnitOfWork unitOfWork )
         {
             _unitOfWork = unitOfWork;
-            _postCommitDispatcher = postCommitDispatcher;
-            _postCommitStore = postCommitStore;
+            
         }
 
         public async Task<TResponse> Handle(
@@ -26,8 +22,7 @@ namespace exam_system.Features.Shared.Behaviors
          CancellationToken cancellationToken,
          RequestHandlerDelegate<TResponse> next)
         {
-            // نبدأ بصندوق فاضي
-            _postCommitStore.Clear();
+
             // 1. فتح Transaction
             await _unitOfWork.BeginTransactionAsync(
                 cancellationToken);
@@ -50,7 +45,6 @@ namespace exam_system.Features.Shared.Behaviors
                 // 4. فشل متوقع من الـ Orchestrator
                 if (!result.ShouldCommit)
                 {
-                    _postCommitStore.Clear();
                     await _unitOfWork.RollbackTransactionAsync(
                         CancellationToken.None);
 
@@ -68,8 +62,7 @@ namespace exam_system.Features.Shared.Behaviors
             }
             catch
             {
-                // ممنوع إرسال الإيميل عند الفشل
-                _postCommitStore.Clear();
+               
 
                 await _unitOfWork.RollbackTransactionAsync(
                     CancellationToken.None);
@@ -81,9 +74,7 @@ namespace exam_system.Features.Shared.Behaviors
                 await _unitOfWork.EndTransactionAsync();
             }
 
-            // لا نصل هنا إلا بعد نجاح الـ Commit
-            await _postCommitDispatcher.DispatchAsync(
-                CancellationToken.None);
+           
 
             return response;
         }

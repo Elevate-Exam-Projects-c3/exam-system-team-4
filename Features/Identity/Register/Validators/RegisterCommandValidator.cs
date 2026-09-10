@@ -8,11 +8,12 @@ namespace exam_system.Features.Identity.Register.Validators
         public RegisterCommandValidator()
         {
             RuleFor(command => command.FullName)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage("Full name is required")
-                .MinimumLength(2)
+                .Must(fullName => fullName.Trim().Length >= 2)
                 .WithMessage("Full name must be at least 2 characters")
-                .MaximumLength(100)
+                .Must(fullName => fullName.Trim().Length <= 100)
                 .WithMessage("Full name cannot exceed 100 characters");
 
             RuleFor(command => command.Email)
