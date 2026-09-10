@@ -23,46 +23,7 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Handlers
 
         public async Task<RequestResponse> Handle(CreateQuizCommand request, CancellationToken cancellationToken)
         {
-            //Validate dates
-            //
-            if (request.StartDate < DateTime.UtcNow || request.EndDate <= DateTime.UtcNow)
-            {
-                var errors = new Dictionary<string, string[]>();
-                if (request.StartDate < DateTime.UtcNow)
-                {
-                    errors.Add("StartDate", ["Start date must be in the future."]);
-                }
-                if (request.EndDate <= DateTime.UtcNow)
-                {
-                    errors.Add("EndDate", ["End date must be after start date."]);
-                }
-                return RequestResponse.Fail(
-                                 "Invalid quiz dates.",
-                                  400,
-                                  errors);
-            }
-            if (IsEndDateBeforeOrEqualToStartDate(request.StartDate, request.EndDate))
-            {
-
-                return RequestResponse.Fail(
-                        "End date must be after start date.",
-                        400,
-                        new Dictionary<string, string[]>
-                        {
-                             { "EndDate", ["End date must be after start date."] }
-                        });
-            }
-            //
-            if (IsDurationMinutesExceedingDateRange(request.StartDate, request.EndDate, request.DurationMinutes))
-            {
-                return RequestResponse.Fail(
-                        "Duration cannot exceed the time between start date and end date.",
-                        400,
-                        new Dictionary<string, string[]>
-                        {
-                             { "DurationMinutes", ["Duration cannot exceed the time between start date and end date."] }
-                        });
-            }
+            
             //is deploma exist
             var isDiplomaExist = (await _mediator.Send(new CheckDiplomaExistenceById(request.DiplomaId), cancellationToken)).Data;
             if (!isDiplomaExist)
@@ -85,6 +46,8 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Handlers
                 PassScore = request.PassScore,
                 MaxAttempts = request.MaxAttempts,
                 Status = QuizStatus.Draft,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
                 CreatedAt = DateTime.UtcNow
             });
             var result = await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -95,14 +58,7 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Handlers
 
             //
         }
-        private bool IsEndDateBeforeOrEqualToStartDate(DateTime startDate, DateTime endDate)
-        {
-            return endDate <= startDate;
-        }
-        private bool IsDurationMinutesExceedingDateRange(DateTime startDate, DateTime endDate, int durationMinutes)
-        {
-            return (endDate - startDate).TotalMinutes < durationMinutes; ;
-        }
+        
 
     }
 }

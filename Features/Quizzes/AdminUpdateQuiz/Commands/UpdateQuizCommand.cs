@@ -1,4 +1,5 @@
-﻿using exam_system.Features.Shared;
+﻿using exam_system.Features.Quizzes.Shared.Validators;
+using exam_system.Features.Shared;
 using MediatR;
 
 namespace exam_system.Features.Quizzes.AdminUpdateQuiz.Commands
@@ -10,7 +11,7 @@ namespace exam_system.Features.Quizzes.AdminUpdateQuiz.Commands
                                   DateTime EndDate,
                                   string? Instructions,
                                   int PassScore ,
-                                  int? MaxAttempts ) : IRequest<RequestResponse>;
+                                  int? MaxAttempts ) : IRequest<RequestResponse>, IQuizScheduleRequest;
 
 
 }

@@ -1,11 +1,12 @@
-﻿using exam_system.Features.Quizzes.AdminCreateQuiz.ViewModels;
+﻿using exam_system.Features.Quizzes.AdminUpdateQuiz.Commands;
+using exam_system.Features.Quizzes.Shared.Validators;
 using FluentValidation;
 
-namespace exam_system.Features.Quizzes.AdminCreateQuiz.Validators
+namespace exam_system.Features.Quizzes.AdminUpdateQuiz.Validators
 {
-    public class CreateQuizViewModelValidator : AbstractValidator<CreateQuizViewModel>
+    public class UpdateQuizCommandValidator : AbstractValidator<UpdateQuizCommand>
     {
-        public CreateQuizViewModelValidator()
+        public UpdateQuizCommandValidator()
         {
             RuleFor(quiz => quiz.Title)
                 .NotEmpty()
@@ -27,13 +28,7 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Validators
                 .GreaterThan(0)
                 .When(x => x.MaxAttempts.HasValue);
 
-            RuleFor(quiz => quiz.StartDate)
-           .NotEmpty();
-
-            RuleFor(quiz => quiz.EndDate)
-           .NotEmpty()
-           .GreaterThan(quiz => quiz.StartDate)
-           .WithMessage("End date must be after start date.");
+            this.ApplyQuizScheduleRules();
 
         }
     }
