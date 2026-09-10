@@ -1,9 +1,11 @@
+using exam_system.Common.Enums;
+using exam_system.Domain.Entities.Attempts;
+using exam_system.Domain.Entities.Diplomas;
+using exam_system.Domain.Entities.Identity;
+using exam_system.Domain.Entities.Quizzes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using exam_system.Domain.Entities.Identity;
-using exam_system.Domain.Entities.Diplomas;
-using exam_system.Domain.Entities.Quizzes;
-using exam_system.Domain.Entities.Attempts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace exam_system.Persistence.Configurations;
 
@@ -135,8 +137,40 @@ public class QuizConfiguration : IEntityTypeConfiguration<Quiz>
         builder.ToTable("Quizzes");
         builder.HasKey(q => q.Id);
 
-        builder.Property(q => q.Title).HasMaxLength(200).IsRequired();
-        builder.Property(q => q.Instructions).HasMaxLength(2000);
+        //title
+        builder.Property(quiz => quiz.Title).HasMaxLength(200).IsRequired();
+        builder
+            .ToTable(quizTable =>
+                        quizTable.HasCheckConstraint("CK_Quiz_Title_MinLength","LEN([Title]) >= 3" ));
+   
+        builder.Property(quiz => quiz.Instructions).HasMaxLength(2000);
+
+        //pass score
+        builder.Property(quiz => quiz.PassScore)
+                .HasMaxLength(100)
+                .HasDefaultValue(60);
+        builder
+            .ToTable(quizTable =>
+                        quizTable.HasCheckConstraint("CK_Quiz_PassScore_Range", "[PassScore] >= 0 AND [PassScore] <= 100"));
+        //status 
+        builder.Property(quiz => quiz.Status)
+                .HasDefaultValue(QuizStatus.Draft);
+
+        ////Duration Minutes
+        builder
+             .ToTable(quizTable =>
+                         quizTable.HasCheckConstraint("CK_Quiz_DurationMinutes_Positive",
+                                                     "[DurationMinutes] > 0"));
+
+
+        //
+        //Dates
+        //builder.ToTable("Quizzes", table =>
+        //{
+        //    table.HasCheckConstraint(
+        //        "CK_Quiz_EndDate_After_StartDate",
+        //        "[EndDate] > [StartDate]");
+        //});
 
         builder.HasOne(q => q.Diploma)
             .WithMany(d => d.Quizzes)
