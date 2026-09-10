@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using exam_system.Persistence.Context;
 
@@ -11,9 +12,11 @@ using exam_system.Persistence.Context;
 namespace exam_system.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260907111722_addbaseentitytoidentity")]
+    partial class addbaseentitytoidentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -669,9 +672,6 @@ namespace exam_system.Migrations
                     b.Property<int>("DurationMinutes")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Instructions")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
@@ -683,21 +683,13 @@ namespace exam_system.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("PassScore")
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(100)
-                        .HasColumnType("int")
-                        .HasDefaultValue(60);
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<int>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(1);
+                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -711,14 +703,7 @@ namespace exam_system.Migrations
 
                     b.HasIndex("DiplomaId");
 
-                    b.ToTable("Quizzes", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Quiz_DurationMinutes_Positive", "[DurationMinutes] > 0");
-
-                            t.HasCheckConstraint("CK_Quiz_PassScore_Range", "[PassScore] >= 0 AND [PassScore] <= 100");
-
-                            t.HasCheckConstraint("CK_Quiz_Title_MinLength", "LEN([Title]) >= 3");
-                        });
+                    b.ToTable("Quizzes", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

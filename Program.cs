@@ -1,11 +1,13 @@
 using System.Reflection;
-using FluentValidation;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
 using exam_system.Domain.Entities.Diplomas;
 using exam_system.Persistence;
 using exam_system.Persistence.Context;
 using exam_system.Persistence.DataAccess;
+using FluentValidation;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using static exam_system.Persistence.Configurations.StudentQuestionAnswerConfiguration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +27,15 @@ var app = builder.Build();
 // Seed Database automatically on startup
 using (var scope = app.Services.CreateScope())
 {
+
+    /////
+    var roleManager =
+        scope.ServiceProvider
+            .GetRequiredService<RoleManager<IdentityRole>>();
+
+    await IdentitySeeder.SeedRolesAsync(roleManager); 
+
+
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
     try
