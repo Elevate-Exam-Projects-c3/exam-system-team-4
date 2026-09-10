@@ -1,4 +1,6 @@
+using exam_system.Domain.Entities.Diplomas;
 using exam_system.Features;
+using exam_system.Features.Diplomas.EnrollDiploma.Interfaces;
 using exam_system.Persistence.Context;
 using exam_system.Persistence.DataAccess;
 using MediatR;
@@ -18,13 +20,14 @@ public static class DependencyInjection
 
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-
+     
         return services;
     }
 
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        builder.Services.AddMediatR(typeof(MidiatrAssembly).Assembly);
+        // MediatR
+        services.AddMediatR(typeof(Program).Assembly);
         return services;
     }
 
