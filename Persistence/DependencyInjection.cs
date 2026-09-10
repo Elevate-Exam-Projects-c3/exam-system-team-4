@@ -24,7 +24,7 @@ public static class DependencyInjection
 
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        builder.Services.AddMediatR(typeof(MidiatrAssembly).Assembly);
+        services.AddMediatR(typeof(MidiatrAssembly).Assembly);
         return services;
     }
 
