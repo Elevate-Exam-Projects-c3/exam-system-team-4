@@ -37,7 +37,7 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services,IConfiguration configuration)
     {
         // MediatR
         services.AddMediatR(typeof(Program).Assembly);

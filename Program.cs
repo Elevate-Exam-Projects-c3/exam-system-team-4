@@ -1,9 +1,12 @@
+using System.Reflection;
+using FluentValidation;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 using exam_system.Domain.Entities.Diplomas;
+using exam_system.Features.Shared;
 using exam_system.Persistence;
 using exam_system.Persistence.Context;
 using exam_system.Persistence.DataAccess;
-using FluentValidation;
-using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -16,11 +19,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddPersistenceServices(builder.Configuration);
-builder.Services.AddApplicationServices();
 
-
+builder.Services.AddApplicationServices(builder.Configuration);
 
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+builder.Services.AddTransient(
+    typeof(IPipelineBehavior<,>),
+    typeof(ValidationBehavior<,>));
 
 var app = builder.Build();
 //app.UseMiddleware<ExceptionMiddleware>();

@@ -32,6 +32,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Features\Identity\ForgotPassword\View Models\" />
+    <Folder Include="Features\Identity\Login\View Models\" />
+    <Folder Include="Features\Identity\RefreshToken\View Models\" />
     <Folder Include="Features\Identity\Register\Dtos\Request\" />
   </ItemGroup>
 
