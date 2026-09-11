@@ -1,5 +1,6 @@
 ﻿using exam_system.Features.Identity.Register.Commands;
 using exam_system.Features.Identity.Register.Dtos.response;
+using exam_system.Features.Identity.Register.ViewModels;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,9 +18,14 @@ public class RegisterController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterCommand command,
+    public async Task<IActionResult> Register([FromBody] RegisterViewModel viewModel,
         CancellationToken cancellationToken)
     {
+        var command = new RegisterCommand(
+            viewModel.FullName,
+            viewModel.Email,
+            viewModel.Password);
+
         var result = await _mediator.Send(command,cancellationToken);
 
         var response = EndpointResponse<RegisterResponse>.FromResult(result);
