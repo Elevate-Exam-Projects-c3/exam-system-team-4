@@ -1,90 +1,105 @@
-﻿using exam_system.Common.Enums;
-using exam_system.Domain.Entities.Identity;
-using exam_system.Features.Identity.Register.Commands;
-using exam_system.Features.Identity.Register.Responses;
+﻿using exam_system.Features.Identity.Register.Commands;
+using exam_system.Features.Identity.Register.Dtos.response;
+using exam_system.Features.Identity.Register.Handlers;
+using exam_system.Features.Identity.Register.Notification;
+using exam_system.Features.Identity.Register.Queries;
 using exam_system.Features.Shared;
-using exam_system.Persistence.DataAccess;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 
 namespace exam_system.Features.Identity.Register.Orchestrators
 {
     public class RegisterOrchestrator
-     : IRequestHandler<RegisterCommand, ApiResponse<RegisterResponse>>
+    : IRequestHandler<RegisterCommand,RequestResponse<RegisterResponse>>
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IGenericRepository<Student> _students;
-        private readonly IGenericRepository<EmailVerificationOtp> _otpRepository;
+        private readonly IMediator _mediator;
 
-        public RegisterOrchestrator(
-            UserManager<ApplicationUser> userManager,IGenericRepository<Student> studentrepo,
-            IGenericRepository<EmailVerificationOtp> otpRepository)
+        public RegisterOrchestrator(IMediator mediator)
         {
-            _userManager = userManager;
-            _students = studentrepo;
-            _otpRepository = otpRepository;
+            _mediator = mediator;
         }
 
-        public async Task<ApiResponse<RegisterResponse>> Handle(RegisterCommand request,
+        public async Task<RequestResponse<RegisterResponse>> Handle(RegisterCommand request,
             CancellationToken cancellationToken)
         {
-            // 1) Check duplicate email
-            var existingUser =
-                await _userManager.FindByEmailAsync(request.Email.Trim());
+            // -- email exict
+            var emailexist =await _mediator.Send(new EmailExistsQuery(request.Email),cancellationToken);
 
-            if (existingUser is not null)
+            // 1. Create the application user.
+
+            var createUserResult = await _mediator.Send(new CreateApplicationUserCommand(request.FullName,
+                    request.Email,request.Password),cancellationToken);
+
+            if (!createUserResult.Success)
             {
-                return ApiResponse<RegisterResponse>.Fail("Email already registered",409);
+                return RequestResponse<RegisterResponse>.Fail(createUserResult.Message,createUserResult.StatusCode,
+                    createUserResult.Errors);
             }
 
-            // 2) Create ApplicationUser 
-            var user = new ApplicationUser
+            var user = createUserResult.Data;
+
+            if (user is null)
             {
-                FullName = request.FullName.Trim(),
-
-                Email = request.Email.Trim(),
-
-                UserName = request.Email.Trim(),
-
-                EmailConfirmed = false,
-
-                AccountStatus = AccountStatus.Pending
-            };
-            // create user 
-
-            var createUserResult = await _userManager.CreateAsync(user,request.Password);
-
-            // validate on register user succeded
-
-
-            if (!createUserResult.Succeeded)
-            {
-                var errors = createUserResult.Errors.Select(e => e.Description).ToArray();
-
-                return ApiResponse<RegisterResponse>.Fail("Registration failed",400);
+                return RequestResponse<RegisterResponse>.Fail(
+                    "User creation returned no user data.",
+                    500);
             }
-            // add role to user 
 
-            var addRoleResult = await _userManager.AddToRoleAsync( user , "Student");
+            // 2. Assign the Student role to the created user.
+            var addRoleResult = await _mediator.Send( new AddUserToRoleCommand(user.UserId),cancellationToken);
 
-            // validate on role added 
-
-            if (!addRoleResult.Succeeded)
+            if (!addRoleResult.Success)
             {
-                var errors = createUserResult.Errors.Select(e => e.Description).ToArray();
-
-                return ApiResponse<RegisterResponse>.Fail("Failed to assign Student role", 500);
+                return RequestResponse<RegisterResponse>.Fail(addRoleResult.Message,
+                    addRoleResult.StatusCode, addRoleResult.Errors);
             }
-            // create student 
-            var student = new Student
+            // 3. Create the student profile.
+
+            var createStudentResult = await _mediator.Send(new CreateStudentCommand(user.UserId),cancellationToken);
+
+            if (!createStudentResult.Success)
             {
-                UserId = user.Id
-            };
+                return RequestResponse<RegisterResponse>.Fail(
+                    message: createStudentResult.Message,
+                    statusCode: createStudentResult.StatusCode,
+                    errors: createStudentResult.Errors);
+            }
 
-            _students.Add(student);
 
+            // 4. Create the OTP.
+            var emailVerifyResult = await _mediator.Send(
+                new CreateEmailVerificationOtpCommand(
+                    user.UserId,
+                    user.Email),
+                cancellationToken);
 
-               throw new NotImplementedException();
+            if (!emailVerifyResult.Success)
+            {
+                return RequestResponse<RegisterResponse>.Fail(
+                    emailVerifyResult.Message,
+                    emailVerifyResult.StatusCode,
+                    emailVerifyResult.Errors);
+            }
+
+            var otpData = emailVerifyResult.Data;
+
+            if (otpData is null)
+            {
+                return RequestResponse<RegisterResponse>.Fail(
+                    "Verification code creation returned no data.",
+                    500);
+            }
+
+            // 5. Send the email now, before the transaction commits.
+            await _mediator.Publish(
+                new SendVerificationOtpNotification(Email: otpData.Email,FullName: user.FullName,Otp: otpData.PlainOtp),
+                cancellationToken);
+
+            // 6. Return only public registration data.
+            return RequestResponse<RegisterResponse>.Created(new RegisterResponse(Email: user.Email,
+                    RequiresEmailConfirmation: true),
+                "Account created successfully. Email confirmation is required.");
         }
+       
+
     }
 }
