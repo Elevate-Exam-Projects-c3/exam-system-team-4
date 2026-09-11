@@ -1,24 +1,32 @@
+using exam_system.Common.Enums;
+using exam_system.Domain.Entities.Attempts;
+using exam_system.Domain.Entities.Diplomas;
+using exam_system.Domain.Entities.Identity;
+using exam_system.Domain.Entities.Quizzes;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using exam_system.Domain.Entities.Identity;
-using exam_system.Domain.Entities.Diplomas;
-using exam_system.Domain.Entities.Quizzes;
-using exam_system.Domain.Entities.Attempts;
 
 namespace exam_system.Persistence.Configurations;
 
-public class ApplicationUserConfiguration : IEntityTypeConfiguration<ApplicationUser>
+public class ApplicationUserConfiguration
+    : IEntityTypeConfiguration<ApplicationUser>
 {
     public void Configure(EntityTypeBuilder<ApplicationUser> builder)
     {
         builder.ToTable("AspNetUsers");
-        builder.HasKey(u => u.Id);
 
-        builder.Property(u => u.FullName).HasMaxLength(100).IsRequired();
-        builder.Property(u => u.Email).HasMaxLength(256).IsRequired();
-        builder.Property(u => u.PasswordHash).IsRequired();
+        builder.Property(u => u.FullName)
+            .HasMaxLength(100)
+            .IsRequired();
 
-        builder.HasIndex(u => u.Email).IsUnique();
+        builder.Property(u => u.Email)
+            .HasMaxLength(256)
+            .IsRequired();
+
+        // Important for case-insensitive email uniqueness
+        builder.HasIndex(u => u.NormalizedEmail)
+            .IsUnique();
 
         builder.HasOne(u => u.Student)
             .WithOne(s => s.User)
@@ -27,71 +35,110 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
     }
 }
 
-public class StudentConfiguration : IEntityTypeConfiguration<Student>
+public class StudentConfiguration
+    : IEntityTypeConfiguration<Student>
 {
     public void Configure(EntityTypeBuilder<Student> builder)
     {
         builder.ToTable("Students");
+
         builder.HasKey(s => s.Id);
 
-        builder.Property(s => s.StudentCode).HasMaxLength(50);
-        builder.Property(s => s.PhoneNumber).HasMaxLength(20);
+        builder.Property(s => s.StudentCode)
+            .HasMaxLength(50);
+
+        builder.Property(s => s.PhoneNumber)
+            .HasMaxLength(20);
+
+        builder.Property(s => s.UserId)
+            .IsRequired();
+
+        builder.HasIndex(s => s.UserId)
+            .IsUnique();
     }
 }
 
-public class EmailVerificationOtpConfiguration : IEntityTypeConfiguration<EmailVerificationOtp>
+public class EmailVerificationOtpConfiguration
+    : IEntityTypeConfiguration<EmailVerificationOtp>
 {
-    public void Configure(EntityTypeBuilder<EmailVerificationOtp> builder)
+    public void Configure(
+        EntityTypeBuilder<EmailVerificationOtp> builder)
     {
-        builder.ToTable("OtpCodes");
+        builder.ToTable("EmailVerificationOtps");
+
         builder.HasKey(o => o.Id);
 
-        builder.Property(o => o.Email).HasMaxLength(256).IsRequired();
-        builder.Property(o => o.OtpHash).IsRequired();
+        builder.Property(o => o.UserId)
+            .IsRequired();
+
+        builder.Property(o => o.OtpHash)
+            .IsRequired();
 
         builder.HasOne(o => o.User)
             .WithMany(u => u.EmailVerificationOtps)
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(o => o.Email);
+        builder.HasIndex(o => o.UserId);
     }
 }
 
-public class PasswordResetOtpConfiguration : IEntityTypeConfiguration<PasswordResetOtp>
+public class PasswordResetOtpConfiguration
+    : IEntityTypeConfiguration<PasswordResetOtp>
 {
-    public void Configure(EntityTypeBuilder<PasswordResetOtp> builder)
+    public void Configure(
+        EntityTypeBuilder<PasswordResetOtp> builder)
     {
         builder.ToTable("PasswordResetOtps");
+
         builder.HasKey(o => o.Id);
 
-        builder.Property(o => o.Email).HasMaxLength(256).IsRequired();
-        builder.Property(o => o.OtpHash).IsRequired();
+        builder.Property(o => o.UserId)
+            .IsRequired();
+
+        builder.Property(o => o.OtpHash)
+            .IsRequired();
+
+        builder.Property(o => o.ResetTokenHash)
+            .IsRequired(false);
 
         builder.HasOne(o => o.User)
             .WithMany(u => u.PasswordResetOtps)
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(o => o.Email);
+        builder.HasIndex(o => o.UserId);
     }
 }
 
-public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
+public class RefreshTokenConfiguration
+    : IEntityTypeConfiguration<RefreshToken>
 {
-    public void Configure(EntityTypeBuilder<RefreshToken> builder)
+    public void Configure(
+        EntityTypeBuilder<RefreshToken> builder)
     {
         builder.ToTable("RefreshTokens");
+
         builder.HasKey(r => r.Id);
 
-        builder.Property(r => r.Token).IsRequired();
+        builder.Property(r => r.UserId)
+            .IsRequired();
+
+        builder.Property(r => r.TokenHash)
+            .IsRequired();
+
+        builder.Property(r => r.ReplacedByTokenHash)
+            .IsRequired(false);
 
         builder.HasOne(r => r.User)
             .WithMany(u => u.RefreshTokens)
             .HasForeignKey(r => r.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(r => r.Token).IsUnique();
+        builder.HasIndex(r => r.TokenHash)
+            .IsUnique();
+
+        builder.HasIndex(r => r.UserId);
     }
 }
 
@@ -135,8 +182,40 @@ public class QuizConfiguration : IEntityTypeConfiguration<Quiz>
         builder.ToTable("Quizzes");
         builder.HasKey(q => q.Id);
 
-        builder.Property(q => q.Title).HasMaxLength(200).IsRequired();
-        builder.Property(q => q.Instructions).HasMaxLength(2000);
+        //title
+        builder.Property(quiz => quiz.Title).HasMaxLength(200).IsRequired();
+        builder
+            .ToTable(quizTable =>
+                        quizTable.HasCheckConstraint("CK_Quiz_Title_MinLength","LEN([Title]) >= 3" ));
+
+        builder.Property(quiz => quiz.Instructions).HasMaxLength(2000);
+
+        //pass score
+        builder.Property(quiz => quiz.PassScore)
+                .HasMaxLength(100)
+                .HasDefaultValue(60);
+        builder
+            .ToTable(quizTable =>
+                        quizTable.HasCheckConstraint("CK_Quiz_PassScore_Range", "[PassScore] >= 0 AND [PassScore] <= 100"));
+        //status
+        builder.Property(quiz => quiz.Status)
+                .HasDefaultValue(QuizStatus.Draft);
+
+        ////Duration Minutes
+        builder
+             .ToTable(quizTable =>
+                         quizTable.HasCheckConstraint("CK_Quiz_DurationMinutes_Positive",
+                                                     "[DurationMinutes] > 0"));
+
+
+        //
+        //Dates
+        //builder.ToTable("Quizzes", table =>
+        //{
+        //    table.HasCheckConstraint(
+        //        "CK_Quiz_EndDate_After_StartDate",
+        //        "[EndDate] > [StartDate]");
+        //});
 
         builder.HasOne(q => q.Diploma)
             .WithMany(d => d.Quizzes)
@@ -222,5 +301,20 @@ public class StudentQuestionAnswerConfiguration : IEntityTypeConfiguration<Stude
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(a => new { a.AttemptId, a.QuestionId }).IsUnique();
+    }
+    // create student role 
+    public static class IdentitySeeder
+    {
+        public static async Task SeedRolesAsync(
+            RoleManager<IdentityRole> roleManager)
+        {
+            const string studentRole = "Student";
+
+            if (!await roleManager.RoleExistsAsync(studentRole))
+            {
+                await roleManager.CreateAsync(
+                    new IdentityRole(studentRole));
+            }
+        }
     }
 }

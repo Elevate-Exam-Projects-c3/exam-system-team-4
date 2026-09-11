@@ -6,7 +6,9 @@ namespace exam_system.Domain.Entities.Identity;
 
 public class Student : BaseEntity
 {
-    public Guid UserId { get; set; }
+
+    public string UserId { get; set; } = string.Empty;
+
     public ApplicationUser User { get; set; } = null!;
 
     public string? StudentCode { get; set; }
