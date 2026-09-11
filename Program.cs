@@ -8,6 +8,8 @@ using exam_system.Persistence;
 using exam_system.Persistence.Context;
 using exam_system.Persistence.DataAccess;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 using static exam_system.Persistence.Configurations.StudentQuestionAnswerConfiguration;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +29,7 @@ builder.Services.AddTransient(
     typeof(ValidationBehavior<,>));
 
 var app = builder.Build();
+//app.UseMiddleware<ExceptionMiddleware>();
 
 // Seed Database automatically on startup
 using (var scope = app.Services.CreateScope())

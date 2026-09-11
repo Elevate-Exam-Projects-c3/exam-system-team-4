@@ -1,4 +1,5 @@
 using exam_system.Domain.Entities.Identity;
+using exam_system.Features.Diplomas.AdminCreateDiploma.Validators;
 using exam_system.Features;
 using exam_system.Features.Shared.Behaviors;
 using exam_system.Helper;
@@ -38,11 +39,11 @@ public static class DependencyInjection
 
     public static IServiceCollection AddApplicationServices(this IServiceCollection services,IConfiguration configuration)
     {
-        //MediatR
-        // اكتشاف الـ Handlers والـ Orchestrators
-        services.AddMediatR(typeof(MidiatrAssembly).Assembly);
+        // MediatR
+        services.AddMediatR(typeof(Program).Assembly);
 
-        // ترتيب الـ Pipeline
+
+
         services.AddTransient(typeof(IPipelineBehavior<,>),typeof(ValidationBehavior<,>));
 
         services.AddTransient(typeof(IPipelineBehavior<,>),typeof(TransactionBehavior<,>));
