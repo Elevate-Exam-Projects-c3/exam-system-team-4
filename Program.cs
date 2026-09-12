@@ -3,10 +3,10 @@ using exam_system.Features.Shared;
 using exam_system.Persistence;
 using exam_system.Persistence.Context;
 using exam_system.Persistence.DataAccess;
-using FluentValidation;
-using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using static exam_system.Persistence.Configurations.StudentQuestionAnswerConfiguration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,10 +25,20 @@ builder.Services.AddTransient(
     typeof(ValidationBehavior<,>));
 
 var app = builder.Build();
+//app.UseMiddleware<ExceptionMiddleware>();
 
 // Seed Database automatically on startup
 using (var scope = app.Services.CreateScope())
 {
+
+    /////
+    var roleManager =
+        scope.ServiceProvider
+            .GetRequiredService<RoleManager<IdentityRole>>();
+
+    await IdentitySeeder.SeedRolesAsync(roleManager); 
+
+
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
     try
@@ -54,6 +64,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseRouting();
+app.UseRateLimiter();
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Test Minimal API Endpoint to verify database access and generic repository
