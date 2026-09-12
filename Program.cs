@@ -1,7 +1,3 @@
-using System.Reflection;
-using FluentValidation;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
 using exam_system.Domain.Entities.Diplomas;
 using exam_system.Features.Shared;
 using exam_system.Persistence;
@@ -17,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddPersistenceServices(builder.Configuration);
 
 builder.Services.AddApplicationServices(builder.Configuration);
 
