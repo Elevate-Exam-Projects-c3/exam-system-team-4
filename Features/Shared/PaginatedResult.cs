@@ -1,3 +1,5 @@
+using exam_system.Features.Diplomas.BrowseDiplomas.DTOs;
+
 namespace exam_system.Features.Shared;
 
 public class PaginatedResult<T>
@@ -17,6 +19,11 @@ public class PaginatedResult<T>
         Items = items;
         TotalCount = count;
         PageIndex = pageIndex;
+        PageSize = pageSize;
+    }
+
+    public PaginatedResult(Task<List<BrowseDiplomaDto>> items, Task<int> totalCount, int pageNumber, int pageSize)
+    {
         PageSize = pageSize;
     }
 

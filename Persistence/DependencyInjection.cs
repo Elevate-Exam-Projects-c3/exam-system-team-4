@@ -1,7 +1,11 @@
 using System.Text;
 using System.Globalization;
 using System.Threading.RateLimiting;
+using exam_system.Domain.Entities.Diplomas;
+using exam_system.Features;
+using exam_system.Features.Diplomas.EnrollDiploma.Interfaces;
 using exam_system.Domain.Entities.Identity;
+using exam_system.Features.Diplomas.AdminCreateDiploma.Validators;
 using exam_system.Features;
 using exam_system.Features.Shared.Behaviors;
 using exam_system.Features.Shared.Services;
@@ -92,6 +96,14 @@ public static class DependencyInjection
 
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+     
+        return services;
+    }
+
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    {
+        // MediatR
+        services.AddMediatR(typeof(Program).Assembly);
         
         services.AddScoped<IEmailSender, EmailSender>();
         // hach otp
@@ -102,11 +114,11 @@ public static class DependencyInjection
 
     public static IServiceCollection AddApplicationServices(this IServiceCollection services,IConfiguration configuration)
     {
-        //MediatR
-        // اكتشاف الـ Handlers والـ Orchestrators
-        services.AddMediatR(typeof(MidiatrAssembly).Assembly);
 
-        // ترتيب الـ Pipeline
+        services.AddMediatR(typeof(Program).Assembly);
+
+
+
         services.AddTransient(typeof(IPipelineBehavior<,>),typeof(ValidationBehavior<,>));
 
         services.AddTransient(typeof(IPipelineBehavior<,>),typeof(TransactionBehavior<,>));
