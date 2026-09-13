@@ -1,41 +1,58 @@
-﻿using exam_system.Features.Diplomas.EnrollDiploma.Commands;
+﻿using exam_system.Domain.Entities.Diplomas;
+using exam_system.Domain.Entities.Identity;
+using exam_system.Features.Diplomas.EnrollDiploma.Commands;
+using exam_system.Features.Diplomas.EnrollDiploma.DTO;
+using exam_system.Features.Shared;
 using MediatR;
 
 namespace exam_system.Features.Diplomas.EnrollDiploma.Orchestrators
 {
-    public class EnrollmentOrchestrator : IEnrollmentOrchestrator
+    public class EnrollDiplomaOrchestrator
     {
         private readonly IMediator _mediator;
 
-        public EnrollmentOrchestrator(IMediator mediator)
+        public EnrollDiplomaOrchestrator(IMediator mediator)
         {
             _mediator = mediator;
         }
 
-        public async Task<bool> IsStudentAlreadyEnrolled(
-            Guid studentId,
-            Guid diplomaId,
-            CancellationToken cancellationToken)
+        public async Task<RequestResponse<bool>> ExecuteAsync(  Guid studentId,Guid diplomaId,  CancellationToken cancellationToken = default)
         {
-            return await _mediator.Send(
-                new CheckStudentEnrollmentCommand
-                {
-                    StudentId = studentId,
-                    DiplomaId = diplomaId
-                },
-                cancellationToken);
-        }
+            var isAlreadyEnrolledResult = await _mediator.Send(new CheckStudentEnrollmentCommand(studentId, diplomaId),  cancellationToken);
 
-        public async Task<bool> HasPublishedQuiz(
-            Guid diplomaId,
-            CancellationToken cancellationToken)
-        {
-            return await _mediator.Send(
-                new CheckPublishedQuizCommand
-                {
-                    DiplomaId = diplomaId
-                },
+            if (!isAlreadyEnrolledResult.Success)
+            {
+                return RequestResponse<bool>.Fail(isAlreadyEnrolledResult.Message);
+            }
+
+            if (isAlreadyEnrolledResult.Data)
+            {
+                return RequestResponse<bool>.Fail("Student already enrolled in this diploma before");
+            }
+
+            var hasPublishedQuizResult = await _mediator.Send(
+                new CheckPublishedQuizCommand(diplomaId),
                 cancellationToken);
+
+            if (!hasPublishedQuizResult.Success)
+            {
+                return RequestResponse<bool>.Fail(hasPublishedQuizResult.Message);
+            }
+
+            if (hasPublishedQuizResult.Data)
+            {
+                
+                return RequestResponse<bool>.Fail("Diploma is not available");
+            }
+
+            var enrollCommandResult = await _mediator.Send( new StudentEnrollDiplomaCommand(studentId, diplomaId),  cancellationToken);
+
+            if (!enrollCommandResult.Success)
+            {
+                return RequestResponse<bool>.Fail(enrollCommandResult.Message, enrollCommandResult.StatusCode);
+            }
+
+            return RequestResponse<bool>.Created(true, enrollCommandResult.Message);
         }
     }
 }

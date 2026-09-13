@@ -37,6 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Features\Diplomas\EnrollDiploma\Interfaces\" />
     <Folder Include="Features\Identity\ForgotPassword\View Models\" />
     <Folder Include="Features\Identity\Login\View Models\" />
     <Folder Include="Features\Identity\RefreshToken\View Models\" />

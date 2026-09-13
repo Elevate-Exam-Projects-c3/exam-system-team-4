@@ -71,30 +71,30 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Test Minimal API Endpoint to verify database access and generic repository
-app.MapGet("/api/test/diplomas", async (IGenericRepository<Diploma> diplomaRepo, CancellationToken ct) =>
-{
-    var diplomas = await diplomaRepo.GetAll()
-        .Select(d => new
-        {
-            d.Id,
-            d.Title,
-            d.Description,
-            QuizzesCount = d.Quizzes.Count,
-            EnrollmentsCount = d.Enrollments.Count,
-            d.CreatedAt
-        })
-        .ToListAsync(ct);
+//// Test Minimal API Endpoint to verify database access and generic repository
+//app.MapGet("/api/test/diplomas", async (IGenericRepository<Diploma> diplomaRepo, CancellationToken ct) =>
+//{
+//    var diplomas = await diplomaRepo.GetAll()
+//        .Select(d => new
+//        {
+//            d.Id,
+//            d.Title,
+//            d.Description,
+//            QuizzesCount = d.Quizzes.Count,
+//            EnrollmentsCount = d.Enrollments.Count,
+//            d.CreatedAt
+//        })
+//        .ToListAsync(ct);
 
-    return Results.Ok(new
-    {
-        Success = true,
-        Count = diplomas.Count,
-        Data = diplomas
-    });
-})
-.WithName("GetTestDiplomas")
-.WithTags("Test");
+//    return Results.Ok(new
+//    {
+//        Success = true,
+//        Count = diplomas.Count,
+//        Data = diplomas
+//    });
+//})
+//.WithName("GetTestDiplomas")
+//.WithTags("Test");
 
 app.MapControllers();
 

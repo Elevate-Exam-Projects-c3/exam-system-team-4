@@ -1,28 +1,29 @@
-﻿using exam_system.Features.Diplomas.EnrollDiploma.Commands;
-using exam_system.Features.Diplomas.EnrollDiploma.Interfaces;
+﻿using exam_system.Domain.Entities.Diplomas;
+using exam_system.Features.Diplomas.EnrollDiploma.Commands;
+using exam_system.Features.Shared;
 using exam_system.Persistence.DataAccess;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace exam_system.Features.Diplomas.EnrollDiploma.Handlers
 {
     public class CheckStudentEnrollmentCommandHandler
-        : IRequestHandler<CheckStudentEnrollmentCommand, bool>
+        : IRequestHandler<CheckStudentEnrollmentCommand, RequestResponse<bool>>
     {
-        private readonly IStudentEnrollment _enrollmentRepository;
+        private readonly IGenericRepository<StudentEnrollment> _repository;
 
-        public CheckStudentEnrollmentCommandHandler(
-            IStudentEnrollment enrollmentRepository)
+        public CheckStudentEnrollmentCommandHandler(IGenericRepository<StudentEnrollment> repository)
         {
-            _enrollmentRepository = enrollmentRepository;
+            _repository = repository;
         }
 
-        public async Task<bool> Handle(
-            CheckStudentEnrollmentCommand request,
-            CancellationToken cancellationToken)
+        public async Task<RequestResponse<bool>> Handle(CheckStudentEnrollmentCommand request, CancellationToken cancellationToken)
         {
-            return await _enrollmentRepository.EnrolledBefore(
-                request.StudentId,
-                request.DiplomaId);
+            var isEnrolled = await _repository.GetAll()
+                .AnyAsync(sd => sd.StudentId == request.StudentId
+                             && sd.DiplomaId == request.DiplomaId, cancellationToken);
+
+            return RequestResponse<bool>.Ok(isEnrolled);
         }
     }
 }

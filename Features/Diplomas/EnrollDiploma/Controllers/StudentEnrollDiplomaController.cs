@@ -1,7 +1,5 @@
-﻿using exam_system.Features.Diplomas.EnrollDiploma.Commands;
-using exam_system.Features.Diplomas.EnrollDiploma.DTO;
+﻿using exam_system.Features.Diplomas.EnrollDiploma.Orchestrators;
 using exam_system.Features.Diplomas.EnrollDiploma.ViewModels;
-using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,20 +9,24 @@ namespace exam_system.Features.Diplomas.EnrollDiploma.Controllers
     [ApiController]
     public class StudentEnrollDiplomaController : ControllerBase
     {
-        private readonly IMediator _mediator;
+        private readonly EnrollDiplomaOrchestrator _orchestrator;
 
-        public StudentEnrollDiplomaController(IMediator mediator)
+        public StudentEnrollDiplomaController(EnrollDiplomaOrchestrator orchestrator)
         {
-            _mediator = mediator;
+            _orchestrator = orchestrator;
         }
 
         [HttpPost]
-        public async Task<IActionResult> EnrollDiploma([FromBody] StudentEnrollmentDiplomaViewModel ViewModel)
+        public async Task<IActionResult> EnrollDiploma(  [FromBody] StudentEnrollmentDiplomaViewModel viewModel,  CancellationToken cancellationToken)
         {
-        
-            var result = await _mediator.Send(new StudentEnrollDiplomaCommand(ViewModel.DiplomaId , ViewModel.StudentId));
+            var result = await _orchestrator.ExecuteAsync( viewModel.StudentId, viewModel.DiplomaId,   cancellationToken);
 
-            return Ok("Enrollment Created Successfully");
+            if (!result.Success)
+            {
+                return StatusCode(result.StatusCode, result);
+            }
+
+            return StatusCode(result.StatusCode, result);
         }
     }
 }
