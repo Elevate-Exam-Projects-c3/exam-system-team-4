@@ -4,5 +4,8 @@
     {
         public Guid DiplomaId { get; set; }
         public Guid StudentId { get; set; }
+
+       
+       
     }
 }

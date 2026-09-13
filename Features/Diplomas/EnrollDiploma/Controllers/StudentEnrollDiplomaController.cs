@@ -19,10 +19,10 @@ namespace exam_system.Features.Diplomas.EnrollDiploma.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> EnrollDiploma([FromBody] StudentEnrollDiplomaDto dto)
+        public async Task<IActionResult> EnrollDiploma([FromBody] StudentEnrollmentDiplomaViewModel ViewModel)
         {
         
-            var result = await _mediator.Send(new StudentEnrollDiplomaCommand(dto.DiplomaId , dto.StudentId));
+            var result = await _mediator.Send(new StudentEnrollDiplomaCommand(ViewModel.DiplomaId , ViewModel.StudentId));
 
             return Ok("Enrollment Created Successfully");
         }

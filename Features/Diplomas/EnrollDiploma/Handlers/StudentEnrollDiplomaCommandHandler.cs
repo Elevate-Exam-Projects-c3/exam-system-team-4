@@ -1,51 +1,64 @@
-﻿using exam_system.Common.Enums;
-using exam_system.Domain.Entities.Diplomas;
+﻿using exam_system.Domain.Entities.Diplomas;
 using exam_system.Features.Diplomas.EnrollDiploma.Commands;
 using exam_system.Features.Diplomas.EnrollDiploma.DTO;
 using exam_system.Features.Diplomas.EnrollDiploma.Interfaces;
+using exam_system.Features.Diplomas.EnrollDiploma.Orchestrators;
+using exam_system.Features.Shared;
 using exam_system.Persistence.DataAccess;
 using MediatR;
 
 namespace exam_system.Features.Diplomas.EnrollDiploma.Handlers
 {
     public class StudentEnrollDiplomaCommandHandler
-     : IRequestHandler<StudentEnrollDiplomaCommand, Unit>
+        : IRequestHandler<
+            StudentEnrollDiplomaCommand,
+            RequestResponse<StudentEnrollDiplomaDto>>
     {
-        private readonly IStudentEnrollment _enrollmentRepository;
-        private readonly IDiploma _diplomaRepository;
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IGenericRepository<StudentEnrollment> _enrollments;
 
-        public StudentEnrollDiplomaCommandHandler(
-            IStudentEnrollment enrollmentRepository,
-            IDiploma diplomaRepository,
-            IUnitOfWork unitOfWork , IGenericRepository<StudentEnrollment> enrollments)
+        private readonly IEnrollmentOrchestrator _orchestrator;
+        private readonly IGenericRepository<StudentEnrollment> _repository;
+        private readonly IUnitOfWork _unitOfWork;
+
+        public StudentEnrollDiplomaCommandHandler(IGenericRepository<StudentEnrollment> repository, IUnitOfWork unitOfWork, IEnrollmentOrchestrator orchestrator)
+           
         {
-            _enrollmentRepository = enrollmentRepository;
-            _diplomaRepository = diplomaRepository;
+            _orchestrator = orchestrator;
+            _repository = repository;
             _unitOfWork = unitOfWork;
-            _enrollments = enrollments;
         }
 
-        public async Task<Unit> Handle( StudentEnrollDiplomaCommand request, CancellationToken cancellationToken)
+        public async Task<RequestResponse<StudentEnrollDiplomaDto>> Handle(
+            StudentEnrollDiplomaCommand request,
+            CancellationToken cancellationToken)
         {
-            // Check duplicate enrollment
-            var alreadyEnrolled = await _enrollmentRepository.EnrolledBefore( request.StudentId, request.DiplomaId);
+            // 1. Check if student is already enrolled
+            var alreadyEnrolled =
+                await _orchestrator.IsStudentAlreadyEnrolled(
+                    request.StudentId,
+                    request.DiplomaId,
+                    cancellationToken);
 
-            if (alreadyEnrolled = true)
+            if (alreadyEnrolled)
             {
-                throw new Exception( "Student is already enrolled in this diploma");
+                return RequestResponse<StudentEnrollDiplomaDto>.Fail(
+                    "Student is already enrolled in this diploma",
+                    400);
             }
 
-            // Check published quizzes
-            var hasPublishedQuiz = await _diplomaRepository.HasPublishedQuizAsync( request.DiplomaId, cancellationToken);
+            // 2. Check if diploma has at least one published quiz
+            var hasPublishedQuiz =
+                await _orchestrator.HasPublishedQuiz(
+                    request.DiplomaId,
+                    cancellationToken);
 
             if (!hasPublishedQuiz)
             {
-                throw new Exception( "Diploma is not available for enrollment");
+                return RequestResponse<StudentEnrollDiplomaDto>.Fail(
+                    "Diploma is not available for enrollment",
+                    400);
             }
 
-            // Create enrollment
+            // 3. Create enrollment
             var enrollment = new StudentEnrollment
             {
                 StudentId = request.StudentId,
@@ -53,12 +66,20 @@ namespace exam_system.Features.Diplomas.EnrollDiploma.Handlers
                 EnrolledAt = DateTime.UtcNow
             };
 
-             _enrollments.Add(enrollment);
+             _repository.Add(enrollment);
 
+            // whatever save method you are using
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Unit.Value;
+            var response = new StudentEnrollDiplomaDto
+            {
+                StudentId = request.StudentId,
+                DiplomaId = request.DiplomaId,
+            };
+
+            return RequestResponse<StudentEnrollDiplomaDto>.Created(
+                response,
+                "Diploma enrolled successfully");
         }
     }
 }
-
