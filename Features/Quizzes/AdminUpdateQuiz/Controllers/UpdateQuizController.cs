@@ -1,5 +1,6 @@
 ﻿using exam_system.Features.Quizzes.AdminUpdateQuiz.Commands;
 using exam_system.Features.Quizzes.AdminUpdateQuiz.ViewModels;
+using exam_system.Features.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,7 +27,8 @@ namespace exam_system.Features.Quizzes.AdminUpdateQuiz.Controllers
                                                                 EndDate:viewModel.EndDate,
                                                                 MaxAttempts: viewModel.MaxAttempts
                                                                 ), cancellationToken);
-            return StatusCode(requestResult.StatusCode, requestResult);
+            var enpointResponse = EndpointResponse.FromResult(requestResult);
+            return StatusCode(enpointResponse.StatusCode, enpointResponse);
         }
     }
 }
