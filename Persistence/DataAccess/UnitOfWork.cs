@@ -13,63 +13,52 @@ public class UnitOfWork : IUnitOfWork
         _context = context;
     }
 
-    // Transaction methods
-    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+    public async Task BeginTransactionAsync(
+        CancellationToken cancellationToken = default)
     {
-        _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-    }
-
-    public async Task CommitTransactionAsync(CancellationToken cancellationToken=default)
-    {
-        try
+        if (_transaction is not null)
         {
-            if (_transaction != null)
-            {
-                await _transaction.CommitAsync( cancellationToken);
-            }
+            throw new InvalidOperationException(
+                "A transaction is already active.");
         }
-        finally
+        _transaction =await _context.Database.BeginTransactionAsync(cancellationToken);
+    }
+
+    public async Task CommitTransactionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (_transaction is null)
         {
-            if (_transaction != null)
-            {
-                await _transaction.DisposeAsync();
-                _transaction = null;
-            }
+            throw new InvalidOperationException(
+                "There is no active transaction.");
         }
+
+        await _transaction.CommitAsync(cancellationToken);
     }
 
-    public async Task RollbackTransactionAsync(CancellationToken cancellationToken=default)
+    public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
     {
-        try
+        if (_transaction is null)
         {
-            if (_transaction != null)
-            {
-                await _transaction.RollbackAsync();
-            }
+            return;
         }
-        finally
+
+        await _transaction.RollbackAsync(cancellationToken);
+    }
+
+    public async Task EndTransactionAsync()
+    {
+        if (_transaction is null)
         {
-            if (_transaction != null)
-            {
-                await _transaction.DisposeAsync();
-                _transaction = null;
-            }
+            return;
         }
+
+        await _transaction.DisposeAsync();
+        _transaction = null;
     }
 
-    public void Dispose()
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        _transaction?.Dispose();
-        _context?.Dispose();
-    }
-
-    public async Task<int> SaveChangesAsync()
-    {
-        return await _context.SaveChangesAsync();
-    }
-
-    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken)
-    {
-        return await _context.SaveChangesAsync(cancellationToken);
+        return _context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -5,10 +5,11 @@ using exam_system.Domain.Entities.Identity;
 using exam_system.Domain.Entities.Diplomas;
 using exam_system.Domain.Entities.Quizzes;
 using exam_system.Domain.Entities.Attempts;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace exam_system.Persistence.Context;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<ApplicationUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {

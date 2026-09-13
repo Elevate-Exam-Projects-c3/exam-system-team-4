@@ -12,8 +12,8 @@ using exam_system.Persistence.Context;
 namespace exam_system.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260903172959_init")]
-    partial class init
+    [Migration("20260908211854_AddQuizDurationMinutesPositiveConstraint")]
+    partial class AddQuizDurationMinutesPositiveConstraint
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -535,13 +535,18 @@ namespace exam_system.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("PassScore")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("int")
+                        .HasDefaultValue(60);
 
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("Status")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -555,7 +560,14 @@ namespace exam_system.Migrations
 
                     b.HasIndex("DiplomaId");
 
-                    b.ToTable("Quizzes", (string)null);
+                    b.ToTable("Quizzes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Quiz_DurationMinutes_Positive", "[DurationMinutes] > 0");
+
+                            t.HasCheckConstraint("CK_Quiz_PassScore_Range", "[PassScore] >= 0 AND [PassScore] <= 100");
+
+                            t.HasCheckConstraint("CK_Quiz_Title_MinLength", "LEN([Title]) >= 3");
+                        });
                 });
 
             modelBuilder.Entity("exam_system.Domain.Entities.Attempts.QuizAttempt", b =>

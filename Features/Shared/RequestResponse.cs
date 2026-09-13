@@ -1,12 +1,15 @@
+using exam_system.Features.Shared.Cqrs;
+
 namespace exam_system.Features.Shared;
 
-public class RequestResponse<T>
+public class RequestResponse<T> : ITransactionResult
 {
     public bool Success { get; set; }
     public int StatusCode { get; set; }
     public string Message { get; set; } = string.Empty;
     public T? Data { get; set; }
     public IDictionary<string, string[]>? Errors { get; set; }
+    public bool ShouldCommit => Success;
 
     public static RequestResponse<T> Ok(T data, string message = "Success", int statusCode = 200)
     {
