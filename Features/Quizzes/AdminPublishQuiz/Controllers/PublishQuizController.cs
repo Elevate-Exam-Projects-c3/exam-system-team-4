@@ -21,5 +21,19 @@ namespace exam_system.Features.Quizzes.AdminPublishQuiz.Controllers
 
             return Ok(result);
         }
+
+        [HttpPost("{quizId}/unpublish")]
+        public async Task<IActionResult> Unpublish(
+    Guid quizId,
+    CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(
+                new UnpublishQuizOrchestrator(quizId),
+                cancellationToken);
+
+            return Ok(result);
+        }
     }
+
+
 }
