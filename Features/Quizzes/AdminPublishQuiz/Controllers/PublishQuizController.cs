@@ -7,7 +7,7 @@ namespace exam_system.Features.Quizzes.AdminPublishQuiz.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize("Admin")]
+    [Authorize("Admin")]
     public class PublishQuizController(IMediator mediator) : ControllerBase
     {
         [HttpPost("{quizId}/publish")]
