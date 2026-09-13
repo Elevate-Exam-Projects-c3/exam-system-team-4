@@ -1,17 +1,18 @@
 ﻿using exam_system.Domain.Entities.Quizzes;
 using exam_system.Features.Quizzes.AdminManageQuestions.Commands;
+using exam_system.Features.Shared;
 using exam_system.Persistence.DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace exam_system.Features.Quizzes.AdminManageQuestions.Handlers
 {
-    public class DeleteQuestionCommandHandler(IGenericRepository<Question> repository, IUnitOfWork unitOfWork) : IRequestHandler<DeleteQuestionCommand, string>
+    public class DeleteQuestionCommandHandler(IGenericRepository<Question> repository, IUnitOfWork unitOfWork) : IRequestHandler<DeleteQuestionCommand, RequestResponse<bool>>
     {
         private readonly IGenericRepository<Question> _repository = repository;
         private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
-        public async Task<string> Handle(DeleteQuestionCommand request, CancellationToken cancellationToken)
+        public async Task<RequestResponse<bool>> Handle(DeleteQuestionCommand request, CancellationToken cancellationToken)
         {
             var question = await _repository
           .GetAll()
@@ -41,7 +42,7 @@ namespace exam_system.Features.Quizzes.AdminManageQuestions.Handlers
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return "Question deleted successfully.";
+            return RequestResponse<bool>.Ok(true, "Question deleted successfully.");
         }
     }
 }

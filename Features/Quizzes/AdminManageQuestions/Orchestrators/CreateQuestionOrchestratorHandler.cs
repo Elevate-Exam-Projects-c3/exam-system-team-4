@@ -1,6 +1,7 @@
 ﻿using exam_system.Features.Quizzes.AdminCreateQuiz.Queries;
 using exam_system.Features.Quizzes.AdminManageQuestions.Commands;
 using exam_system.Features.Quizzes.AdminManageQuestions.Dto;
+using exam_system.Features.Shared;
 using MediatR;
 
 namespace exam_system.Features.Quizzes.AdminManageQuestions.Orchestrators
@@ -11,9 +12,9 @@ namespace exam_system.Features.Quizzes.AdminManageQuestions.Orchestrators
     string QuestionText,
     string? Explanation,
     int OrderIndex,
-    List<QuestionOptionDto> Options) : IRequest<QuestionDto>;
+    List<QuestionOptionDto> Options) : IRequest<RequestResponse<bool>>;
 
-    public class CreateQuestionOrchestratorHandler : IRequestHandler<CreateQuestionOrchestrator, QuestionDto>
+    public class CreateQuestionOrchestratorHandler : IRequestHandler<CreateQuestionOrchestrator, RequestResponse<bool>>
     {
         private readonly IMediator _mediator;
 
@@ -22,7 +23,7 @@ namespace exam_system.Features.Quizzes.AdminManageQuestions.Orchestrators
             _mediator = mediator;
         }
 
-        public async Task<QuestionDto> Handle(CreateQuestionOrchestrator request, CancellationToken cancellationToken)
+        public async Task<RequestResponse<bool>> Handle(CreateQuestionOrchestrator request, CancellationToken cancellationToken)
         {
             var quizExists = await _mediator.Send(
            new QuizExistsQuery(request.QuizId),

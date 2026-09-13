@@ -1,4 +1,5 @@
 ﻿using exam_system.Features.Quizzes.AdminManageQuestions.Commands;
+using exam_system.Features.Quizzes.AdminManageQuestions.Dto;
 using exam_system.Features.Quizzes.AdminManageQuestions.Orchestrators;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -16,9 +17,15 @@ namespace exam_system.Features.Quizzes.AdminManageQuestions.Controllers
 
         [HttpPost]
         public async Task<IActionResult> Create(
-            CreateQuestionOrchestrator command,
+            CreateQuestionViewModel model,
             CancellationToken cancellationToken)
         {
+            var  command = new CreateQuestionOrchestrator(
+                model.QuizId,
+                model.QuestionText,
+                model.Explanation,
+                model.OrderIndex,
+                model.Options);
             var result = await _mediator.Send(command, cancellationToken);
 
             return Ok(result);

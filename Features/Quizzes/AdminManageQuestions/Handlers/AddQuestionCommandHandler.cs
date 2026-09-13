@@ -1,6 +1,7 @@
 ﻿using exam_system.Domain.Entities.Quizzes;
 using exam_system.Features.Quizzes.AdminManageQuestions.Commands;
 using exam_system.Features.Quizzes.AdminManageQuestions.Dto;
+using exam_system.Features.Shared;
 using exam_system.Persistence.DataAccess;
 using MediatR;
 
@@ -9,12 +10,12 @@ namespace exam_system.Features.Quizzes.AdminManageQuestions.Handlers
     public class AddQuestionCommandHandler(
         IUnitOfWork unitOfWork,
         IGenericRepository<Question> questionRepository)
-        : IRequestHandler<CreateQuestionCommand, QuestionDto>
+        : IRequestHandler<CreateQuestionCommand, RequestResponse<bool>>
     {
-        private readonly IUnitOfWork _unitOfWork = unitOfWork;
-        private readonly IGenericRepository<Question> _questionRepository = questionRepository;
 
-        public async Task<QuestionDto> Handle(
+
+
+        public async Task<RequestResponse<bool>> Handle(
             CreateQuestionCommand request,
             CancellationToken cancellationToken)
         {
@@ -40,30 +41,14 @@ namespace exam_system.Features.Quizzes.AdminManageQuestions.Handlers
             }
 
             
-            _questionRepository.Add(question);
+            questionRepository.Add(question);
 
             
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
 
 
-            return new QuestionDto
-            {
-                Id = question.Id,
-                QuizId = question.QuizId,
-                Text = question.Text,
-                Explanation = question.Explanation,
-                OrderIndex = question.OrderIndex,
-
-                Options = question.Options
-                    .Select(x => new QuestionOptionDto
-                    {
-                        Id = x.Id,
-                        OptionText = x.OptionText,
-                        IsCorrect = x.IsCorrect
-                    })
-                    .ToList()
-            };
-
+            return RequestResponse<bool>.Ok(true);
+           
         }
     }
 }
