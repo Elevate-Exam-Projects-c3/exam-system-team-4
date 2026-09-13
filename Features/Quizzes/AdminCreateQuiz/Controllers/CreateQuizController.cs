@@ -30,7 +30,8 @@ namespace exam_system.Features.Quizzes.AdminCreateQuiz.Controllers
                                                                 PassScore: viewModel.PassScore,
                                                                 MaxAttempts:viewModel.MaxAttempts                                                             
                                                                 ), cancellationToken);
-            return StatusCode(requestResult.StatusCode, requestResult);
+            var enpointResponse=EndpointResponse.FromResult(requestResult);
+            return StatusCode(enpointResponse.StatusCode, enpointResponse);
         }
     }
 }
