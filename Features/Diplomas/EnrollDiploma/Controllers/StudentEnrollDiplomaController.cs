@@ -1,5 +1,6 @@
 ﻿using exam_system.Features.Diplomas.EnrollDiploma.Orchestrators;
 using exam_system.Features.Diplomas.EnrollDiploma.ViewModels;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,17 +10,17 @@ namespace exam_system.Features.Diplomas.EnrollDiploma.Controllers
     [ApiController]
     public class StudentEnrollDiplomaController : ControllerBase
     {
-        private readonly EnrollDiplomaOrchestrator _orchestrator;
+        private readonly IMediator _mediator;
 
-        public StudentEnrollDiplomaController(EnrollDiplomaOrchestrator orchestrator)
+        public StudentEnrollDiplomaController(IMediator mediator)
         {
-            _orchestrator = orchestrator;
+            _mediator = mediator;
         }
 
         [HttpPost]
         public async Task<IActionResult> EnrollDiploma(  [FromBody] StudentEnrollmentDiplomaViewModel viewModel,  CancellationToken cancellationToken)
         {
-            var result = await _orchestrator.ExecuteAsync( viewModel.StudentId, viewModel.DiplomaId,   cancellationToken);
+            var result = await _mediator.Send(new EnrollDiplomaOrchestrator (viewModel.StudentId, viewModel.DiplomaId));
 
             if (!result.Success)
             {

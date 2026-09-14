@@ -20,8 +20,8 @@ namespace exam_system.Features.Diplomas.EnrollDiploma.Handlers
         public async Task<RequestResponse<bool>> Handle(CheckStudentEnrollmentCommand request, CancellationToken cancellationToken)
         {
             var isEnrolled = await _repository.GetAll()
-                .AnyAsync(sd => sd.StudentId == request.StudentId
-                             && sd.DiplomaId == request.DiplomaId, cancellationToken);
+                .AnyAsync(sd => sd.StudentId == request.studentId
+                             && sd.DiplomaId == request.diplomaId, cancellationToken);
 
             return RequestResponse<bool>.Ok(isEnrolled);
         }
