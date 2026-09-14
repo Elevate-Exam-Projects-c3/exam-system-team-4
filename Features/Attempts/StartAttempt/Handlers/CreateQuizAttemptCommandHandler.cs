@@ -1,6 +1,5 @@
 ﻿using exam_system.Domain.Entities.Attempts;
 using exam_system.Domain.Entities.Quizzes;
-using exam_system.Features.Attempts.Extentions;
 using exam_system.Features.Attempts.StartAttempt.Commands;
 using exam_system.Features.Attempts.StartAttempt.DTOs;
 using exam_system.Features.Diplomas.SharedRequests.Queries;
