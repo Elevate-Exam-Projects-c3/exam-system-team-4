@@ -33,7 +33,7 @@ namespace exam_system.Features.Diplomas.BrowseDiplomas.Controllers
 
             var PaginatedResult = new PaginatedResult<DiplomaItemsListViewModel>(viewModel, result.Data.TotalCount, result.Data.PageSize, result.Data.PageIndex);
 
-            return Ok(EndpointResponse<PaginatedResult<DiplomaItemsListViewModel>>.Ok(PaginatedResult));
+            return Ok(EndpointResponse<PaginatedResult<DiplomaItemsListViewModel>>.Created(PaginatedResult));
         }
     }
 }

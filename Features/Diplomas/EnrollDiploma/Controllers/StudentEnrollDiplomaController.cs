@@ -1,5 +1,4 @@
-﻿using exam_system.Features.Diplomas.EnrollDiploma.Commands;
-using exam_system.Features.Diplomas.EnrollDiploma.DTO;
+﻿using exam_system.Features.Diplomas.EnrollDiploma.Orchestrators;
 using exam_system.Features.Diplomas.EnrollDiploma.ViewModels;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -19,12 +18,16 @@ namespace exam_system.Features.Diplomas.EnrollDiploma.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> EnrollDiploma([FromBody] StudentEnrollDiplomaDto dto)
+        public async Task<IActionResult> EnrollDiploma(  [FromBody] StudentEnrollmentDiplomaViewModel viewModel,  CancellationToken cancellationToken)
         {
-        
-            var result = await _mediator.Send(new StudentEnrollDiplomaCommand(dto.DiplomaId , dto.StudentId));
+            var result = await _mediator.Send(new EnrollDiplomaOrchestrator (viewModel.StudentId, viewModel.DiplomaId));
 
-            return Ok("Enrollment Created Successfully");
+            if (!result.Success)
+            {
+                return StatusCode(result.StatusCode, result);
+            }
+
+            return StatusCode(result.StatusCode, result);
         }
     }
 }

@@ -5,6 +5,7 @@ namespace exam_system.Features.Diplomas.EnrollDiploma.DTO
     {
         public Guid DiplomaId { get; set; }
         public Guid StudentId { get; set; }
+        public DateTime EnrolledAt { get; set; }
        
     }
 }
