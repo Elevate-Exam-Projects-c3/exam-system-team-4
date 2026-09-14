@@ -32,8 +32,7 @@ public sealed class ProcessVerifyEmailOtpCommandHandler
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<RequestResponse<VerifyEmailOtpResponse>> Handle(
-        VerifyEmailOtpCommand request,
+    public async Task<RequestResponse<VerifyEmailOtpResponse>> Handle(VerifyEmailOtpCommand request,
         CancellationToken cancellationToken)
     {
         // 1) البحث عن المستخدم والتحقق من حالة الحساب.
@@ -46,17 +45,16 @@ public sealed class ProcessVerifyEmailOtpCommandHandler
 
         if (user.EmailConfirmed)
         {
-            return RequestResponse<VerifyEmailOtpResponse>.Fail("Email is already verified.", 409);
+            return RequestResponse<VerifyEmailOtpResponse>.Fail("Email is already verified.");
         }
 
         if (user.AccountStatus != AccountStatus.Pending)
         {
-            return RequestResponse<VerifyEmailOtpResponse>.Fail("Account is not pending verification.", 409);
+            return RequestResponse<VerifyEmailOtpResponse>.Fail("Account is not pending verification.");
         }
 
         // 2) جلب أحدث كود فقط، حتى لو كان مستخدمًا.
-        var latestOtp = await _otpRepository
-            .Get(otp => otp.UserId == user.Id && otp.Email == user.Email)
+        var latestOtp = await _otpRepository.Get(otp => otp.UserId == user.Id && otp.Email == user.Email)
             .OrderByDescending(otp => otp.CreatedAt)
             .ThenByDescending(otp => otp.Id)
             .FirstOrDefaultAsync(cancellationToken);

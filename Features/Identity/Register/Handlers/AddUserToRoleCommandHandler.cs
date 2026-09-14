@@ -22,23 +22,27 @@ public sealed class AddUserToRoleCommandHandler
 
         if (user is null)
         {
-            return  RequestResponse.Fail("userId not found", 404);
+            return RequestResponse.Fail("User not found.", 404);
         }
 
-        var addtorole = await _userManager.AddToRoleAsync(user, SD.Student);
+        if (await _userManager.IsInRoleAsync(user, SD.Student))
+        {
+            return RequestResponse.Ok("Student role is already assigned.");
+        }
 
-        if (!addtorole.Succeeded)
+        var addToRoleResult = await _userManager.AddToRoleAsync(user, SD.Student);
+
+        if (!addToRoleResult.Succeeded)
         {
             var errors = new Dictionary<string, string[]>
             {
-                ["identity"]= addtorole.Errors.Select(e=>e.Description).ToArray()
+                ["Identity"] = addToRoleResult.Errors.Select(error => error.Description).ToArray()
             };
 
             return RequestResponse.Fail(
-                $"Failed to assign role: {errors}",400, errors);
+                "Failed to assign the Student role.",400, errors);
         }
 
-        return RequestResponse.Ok("Student role assigned successfully.", 200);
-
+        return RequestResponse.Ok("Student role assigned successfully.");
     }
 }

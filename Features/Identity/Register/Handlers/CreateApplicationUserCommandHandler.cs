@@ -42,9 +42,9 @@ public sealed class CreateApplicationUserCommandHandler
                 ["Identity"] = result.Errors.Select(error => error.Description).ToArray()
             };
 
-            return RequestResponse<CreateApplicationUser>
-                .Fail("faild in create user", 400 ,errors);
+            return RequestResponse<CreateApplicationUser>.Fail("faild in create user", 400 ,errors);
         }
+
 
         var response = new CreateApplicationUser(user.Id,user.FullName,user.Email!);
 

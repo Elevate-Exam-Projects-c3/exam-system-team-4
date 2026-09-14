@@ -48,6 +48,7 @@ public sealed class CreateEmailVerificationOtpCommandHandler
             IsUsed = false
         };
         otp.OtpHash = _otpHasher.HashPassword(otp, plainotp);
+
         _otpRepository.Add(otp);
 
         var response = new EmailVerificationOtpResponse
@@ -57,9 +58,6 @@ public sealed class CreateEmailVerificationOtpCommandHandler
             ExpiresAt = otp.ExpiresAt
         };
 
-        return RequestResponse<EmailVerificationOtpResponse>.Ok(
-            response,
-            "Verification code created successfully.",
-            200);
+        return RequestResponse<EmailVerificationOtpResponse>.Ok(response,"Verification code created successfully.", 200);
     }
 }
