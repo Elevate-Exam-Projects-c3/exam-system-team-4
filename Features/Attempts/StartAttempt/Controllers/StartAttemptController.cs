@@ -37,8 +37,8 @@ namespace exam_system.Features.Attempts.StartAttempt.Controllers
                         Text = question.Text,
                         Options = question.Options.Select(opt => new AttemptOptionViewModel
                         {
-                            Id = question.Id,
-                            Text = question.Text
+                            Id = opt.Id,
+                            Text = opt.Text
                         }).ToList()
                     }).ToList()
                 };

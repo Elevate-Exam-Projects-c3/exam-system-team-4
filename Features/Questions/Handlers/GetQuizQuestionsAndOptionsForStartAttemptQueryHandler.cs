@@ -26,8 +26,7 @@ namespace exam_system.Features.Questions.Handlers
             CancellationToken cancellationToken)
         {
             var questions = await _questionRepo.GetAll()
-                .Where(q => q.QuizId == request.QuizId)
-                .OrderBy(q => Guid.NewGuid())
+                .Where(q => q.QuizId == request.QuizId)    
                 .Select(q => new AttemptQuestionDto
                 {
                     Id = q.Id,
@@ -38,11 +37,12 @@ namespace exam_system.Features.Questions.Handlers
                         {
                             Id = o.Id,
                             Text = o.OptionText
-                        }).OrderBy(q => Guid.NewGuid())
+                        })
                         .ToList()
                 })
                 .ToListAsync(cancellationToken);
             return RequestResponse<List<AttemptQuestionDto>>.Ok(questions);
         }
+
     }
 }

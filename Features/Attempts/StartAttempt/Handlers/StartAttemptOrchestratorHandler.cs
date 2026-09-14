@@ -28,9 +28,13 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
 
             //v=>validate quiz
             //v=>Check if the quiz exists and  
-            if (!quizRequest.Success || quizRequest.Data is null)
+            
+            if (quizRequest is null ||!quizRequest.Success || quizRequest.Data is null)
             {
-                return RequestResponse<StartAttemptResponseDto>.Fail(quizRequest.Message, quizRequest.StatusCode, quizRequest.Errors);
+                return RequestResponse<StartAttemptResponseDto>.Fail(
+                    quizRequest?.Message ?? "Failed to validate Quiz.",
+                    quizRequest?.StatusCode ?? 500,
+                    quizRequest?.Errors);
             }
             //is published. =>Status
             if (!(quizRequest.Data.Status == QuizStatus.Published))
@@ -66,8 +70,16 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
                     });
          
             //db=> Is student enroll at quiz Diploma
-            var isStuentEnrolled =(await _mediator.Send(new IsStudentEnrolledInDiplomaQuery(request.studentId, quizRequest.Data.DiplomaId))).Data;
-            if (!isStuentEnrolled)
+            var enrollmentResult = await _mediator.Send(new IsStudentEnrolledInDiplomaQuery(request.studentId, quizRequest.Data.DiplomaId));
+            if (enrollmentResult is null|| !enrollmentResult.Success)
+            {
+                return RequestResponse<StartAttemptResponseDto>.Fail(
+                    enrollmentResult?.Message ?? "Failed to validate student enrollment.",
+                    enrollmentResult?.StatusCode??500,
+                    enrollmentResult?.Errors);
+            }
+
+            if (!enrollmentResult.Data)
             {
                 return RequestResponse<StartAttemptResponseDto>.Fail(
                     "Student is not enrolled in this diploma.",
@@ -79,7 +91,7 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
             }
             ////Send request
             //db=>Check for an existing InProgress attempt for the current student and quiz.
-           var inProgressAttempt=await _mediator.Send(new GetInProgressQuizAttemptQuery(request.studentId, quizRequest.Data.QuizId));
+            var inProgressAttempt=await _mediator.Send(new GetInProgressQuizAttemptQuery(request.studentId, quizRequest.Data.QuizId));
             //v=>existing attempt is found → return it and don't create another.
             if (inProgressAttempt.Success)
                 return inProgressAttempt;
@@ -87,9 +99,17 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
             
 
             //db=>Count Submitted +TimedOut attempts for this user and quiz.
-            var submittedAndTimeoutAttemptsCount = (await _mediator.Send(new GetSubmittedAndTimedOutAttemptsCountQuery(request.studentId, request.QuizId))).Data;
+            var submittedAndTimeoutAttemptsCountResult = await _mediator.Send(new GetSubmittedAndTimedOutAttemptsCountQuery(request.studentId, request.QuizId));
             //v=>Check MaxAttempts
-            if(quizRequest.Data.MaxAttempts is not null && 
+            if (submittedAndTimeoutAttemptsCountResult is null||!submittedAndTimeoutAttemptsCountResult.Success)
+            {
+                return RequestResponse<StartAttemptResponseDto>.Fail(
+                    submittedAndTimeoutAttemptsCountResult?.Message ?? "Failed to count attempts.",
+                    submittedAndTimeoutAttemptsCountResult?.StatusCode??500,
+                    submittedAndTimeoutAttemptsCountResult?.Errors);
+            }
+            var submittedAndTimeoutAttemptsCount = submittedAndTimeoutAttemptsCountResult.Data;
+            if (quizRequest.Data.MaxAttempts is not null && 
                 quizRequest.Data.MaxAttempts<= submittedAndTimeoutAttemptsCount)
             {
                 return RequestResponse<StartAttemptResponseDto>.Fail(
@@ -117,9 +137,7 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
             }
             
             //db=>Result=>Load Quiz Questions + Options
-            var questionsAndOptions =await _mediator.Send(new GetQuizQuestionsAndOptionsForStartAttemptQuery(quizRequest.Data.QuizId),
-                                             cancellationToken);
-
+           
             var attempt = await _mediator.Send(new GetInProgressQuizAttemptQuery(request.studentId, quizRequest.Data.QuizId));
             if(attempt is null  || !attempt.Success || attempt.Data is null)
             {
@@ -128,9 +146,30 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
                         attempt?.StatusCode ?? 404,
                         attempt?.Errors);
             }
-            attempt.Data.Questions=questionsAndOptions?.Data;
+            var questionsAndOptionsResult = await _mediator.Send(new GetQuizQuestionsAndOptionsForStartAttemptQuery(quizRequest.Data.QuizId),
+                                            cancellationToken);
+            if (questionsAndOptionsResult is null || questionsAndOptionsResult.Data is null)
+            {
+                return RequestResponse<StartAttemptResponseDto>.Fail("Failed to retrieve quiz questions and options.");
+            }
+                FisherYatesShuffle<AttemptQuestionDto>(questionsAndOptionsResult.Data);
+            foreach (var question in questionsAndOptionsResult.Data)
+            {
+                FisherYatesShuffle(question.Options);
+            }
+            attempt.Data.Questions=questionsAndOptionsResult.Data;
             return RequestResponse< StartAttemptResponseDto>.Ok(attempt.Data);
 
+        }
+
+        private void FisherYatesShuffle<T>(IList<T> items)
+        {
+            for (int i = items.Count - 1; i > 0; i--)
+            {
+                int j = Random.Shared.Next(0, i + 1);
+
+                (items[i], items[j]) = (items[j], items[i]);
+            }
         }
     }
 }
