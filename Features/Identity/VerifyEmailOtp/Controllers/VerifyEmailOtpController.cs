@@ -2,12 +2,14 @@ using exam_system.Features.Identity.VerifyEmailOtp.Commands;
 using exam_system.Features.Identity.VerifyEmailOtp.Dtos.Response;
 using exam_system.Features.Identity.VerifyEmailOtp.ViewModels;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace exam_system.Features.Identity.VerifyEmailOtp.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[AllowAnonymous]
 public sealed class VerifyEmailOtpController : ControllerBase
 {
     private readonly IMediator _mediator;

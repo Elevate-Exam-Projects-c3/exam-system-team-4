@@ -20,17 +20,25 @@ public sealed class TokenService : ITokenService
     }
 
     public TokenResult GenerateTokens(ApplicationUser user, IEnumerable<string> roles)
+        => GenerateTokens(user.Id, user.Email!, roles, user.Student?.Id);
+
+    public TokenResult GenerateTokens(string userId, string email, IEnumerable<string> roles, Guid? studentId)
     {
         var now = DateTimeOffset.UtcNow;
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id),
-            new(JwtRegisteredClaimNames.Email, user.Email!),
+            new(JwtRegisteredClaimNames.Sub, userId),
+            new(JwtRegisteredClaimNames.Email, email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(JwtRegisteredClaimNames.Iat, now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture),
                 ClaimValueTypes.Integer64)
         };
         claims.AddRange(roles.Select(role => new Claim("role", role)));
+
+        if (studentId.HasValue)
+        {
+            claims.Add(new Claim("studentId", studentId.Value.ToString()));
+        }
 
         var token = new JwtSecurityToken(
             issuer: _options.Issuer,
