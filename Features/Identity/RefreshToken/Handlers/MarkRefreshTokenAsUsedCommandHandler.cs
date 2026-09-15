@@ -14,49 +14,41 @@ public sealed class MarkRefreshTokenAsUsedCommandHandler
 {
     private readonly IGenericRepository<RefreshToken> _refreshTokens;
     private readonly ITokenService _tokenService;
-    private readonly AppDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
     public MarkRefreshTokenAsUsedCommandHandler(
         IGenericRepository<RefreshToken> refreshTokens,
-        ITokenService tokenService,
-        AppDbContext context)
+        ITokenService tokenService, IUnitOfWork unitOfWork)
     {
         _refreshTokens = refreshTokens;
         _tokenService = tokenService;
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
-    public async Task<RequestResponse<bool>> Handle(
-        MarkRefreshTokenAsUsedCommand request,
+    public async Task<RequestResponse<bool>> Handle( MarkRefreshTokenAsUsedCommand request,
         CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        var token = await _refreshTokens.GetByIdAsync(request.RefreshTokenId,cancellationToken);
 
-        // This immediate update must commit together with the replacement
-        // inserted later in the RefreshSessionCommand transaction.
-        if (_context.Database.CurrentTransaction is null)
+        if (token is null ||token.IsUsed ||token.IsRevoked ||token.ExpiresAt <= DateTime.UtcNow)
         {
-            throw new InvalidOperationException(
-                "Consuming a refresh token requires an active transaction. Send RefreshSessionCommand instead.");
+            return RequestResponse<bool>.Ok(false);
         }
 
-        var replacementTokenHash = _tokenService.HashRefreshToken(
-            request.ReplacementRefreshToken);
+        token.IsUsed = true;
 
-        // Recheck validity in the update itself: the orchestrator's earlier
-        // lookup cannot prevent another request from consuming this token.
-        var affectedRows = await _refreshTokens
-            .Get(token =>
-                token.Id == request.RefreshTokenId &&
-                !token.IsUsed &&
-                !token.IsRevoked &&
-                token.ExpiresAt > DateTime.UtcNow)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(token => token.IsUsed, true)
-                .SetProperty(token => token.ReplacedByTokenHash, replacementTokenHash)
-                .SetProperty(token => token.UpdatedAt, DateTime.UtcNow),
-                cancellationToken);
+        token.ReplacedByTokenHash = _tokenService.HashRefreshToken( request.ReplacementRefreshToken);
 
-        return RequestResponse<bool>.Ok(affectedRows == 1);
+        token.UpdatedAt = DateTime.UtcNow;
+
+        _refreshTokens.Update(token);
+
+      
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return RequestResponse<bool>.Ok(true);
+       
+       
+
     }
 }

@@ -119,7 +119,4 @@ All API endpoints return standard envelope structures found in `Features/Shared/
    ```
 4. **Validation**: Add validation rules inside `Validators/` inheriting from `AbstractValidator<TCommand>`. MediatR’s `ValidationBehavior` will automatically execute it before reaching your handler.
 
-## 6. Session Refresh and Logout
 
-See [Session refresh and logout](docs/auth-sessions.md) for the endpoint contract,
-cookie behavior, authorization, and browser integration needed for automatic renewal.
