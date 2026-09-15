@@ -16,7 +16,7 @@ public static class AppDbContextSeed
 
 
             // 2. Seed Diplomas
-            if (!await context.Diplomas.AnyAsync())
+            if (!await context.Diplomas.IgnoreQueryFilters().AnyAsync())
             {
                 logger.LogInformation("Seeding Diplomas, Quizzes, Questions, and Options...");
 
@@ -71,7 +71,17 @@ public static class AppDbContextSeed
                     EnrolledAt = DateTime.UtcNow.AddDays(-20)
                 };
 
-                await context.Enrollments.AddRangeAsync(enrollment1, enrollment2, enrollment3);
+                var sampleStudentIds = new[] { enrollment1.StudentId, enrollment2.StudentId };
+                var existingStudentIds = (await context.Students
+                    .Where(student => sampleStudentIds.Contains(student.Id))
+                    .Select(student => student.Id)
+                    .ToListAsync()).ToHashSet();
+
+                // Identity accounts are created through registration; only seed their related
+                // sample records when the corresponding student profiles already exist.
+                await context.Enrollments.AddRangeAsync(
+                    new[] { enrollment1, enrollment2, enrollment3 }
+                        .Where(enrollment => existingStudentIds.Contains(enrollment.StudentId)));
 
                 // 4. Seed Quizzes for .NET Diploma
                 var quizCsharp = new Quiz
@@ -129,7 +139,15 @@ public static class AppDbContextSeed
                     CreatedAt = DateTime.UtcNow.AddDays(-20)
                 };
 
-                await context.Quizzes.AddRangeAsync(quizCsharp, quizEfCore, quizArchitecture, quizTypeScript);
+                var quizzes = new[] { quizCsharp, quizEfCore, quizArchitecture, quizTypeScript };
+                var now = DateTime.UtcNow;
+                foreach (var quiz in quizzes)
+                {
+                    quiz.StartDate = quiz.PublishedAt ?? now.AddDays(1);
+                    quiz.EndDate = now.AddMonths(1);
+                }
+
+                await context.Quizzes.AddRangeAsync(quizzes);
 
                 // 5. Seed Questions & Options for C# Quiz
                 var q1 = new Question
@@ -283,11 +301,18 @@ public static class AppDbContextSeed
                     AnsweredAt = DateTime.UtcNow.AddMinutes(-5)
                 };
 
-                await context.QuizAttempts.AddRangeAsync(attempt1, attempt2);
-                await context.StudentQuestionAnswers.AddRangeAsync(answer1A, answer1B, answer1C, answer1D, answer2A);
+                var attempts = new[] { attempt1, attempt2 }
+                    .Where(attempt => existingStudentIds.Contains(attempt.StudentId))
+                    .ToArray();
+                var attemptIds = attempts.Select(attempt => attempt.Id).ToHashSet();
+
+                await context.QuizAttempts.AddRangeAsync(attempts);
+                await context.StudentQuestionAnswers.AddRangeAsync(
+                    new[] { answer1A, answer1B, answer1C, answer1D, answer2A }
+                        .Where(answer => attemptIds.Contains(answer.AttemptId)));
 
                 await context.SaveChangesAsync();
-                logger.LogInformation("Database seeded successfully with all domain entities!");
+                logger.LogInformation("Database seeded successfully with the sample catalog and any available sample students' records.");
 
             }
         }
