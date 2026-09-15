@@ -1,12 +1,7 @@
 using System.Text;
 using System.Globalization;
 using System.Threading.RateLimiting;
-using exam_system.Domain.Entities.Diplomas;
-using exam_system.Features;
-using exam_system.Features.Diplomas.EnrollDiploma.Interfaces;
 using exam_system.Domain.Entities.Identity;
-using exam_system.Features.Diplomas.AdminCreateDiploma.Validators;
-using exam_system.Features;
 using exam_system.Features.Shared.Behaviors;
 using exam_system.Features.Shared.Services;
 using exam_system.Helper;
@@ -108,16 +103,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailSender, EmailSender>();
         // hach otp
         services.AddScoped<IPasswordHasher<EmailVerificationOtp>, PasswordHasher<EmailVerificationOtp>>();
-
-        return services;
-    }
-
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services,IConfiguration configuration)
-    {
-
-        services.AddMediatR(typeof(Program).Assembly);
-
-
+        services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
         services.AddTransient(typeof(IPipelineBehavior<,>),typeof(ValidationBehavior<,>));
 
@@ -152,5 +138,8 @@ public static class DependencyInjection
 
         return services;
     }
+
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
+        => services.AddApplicationServices();
 
 }

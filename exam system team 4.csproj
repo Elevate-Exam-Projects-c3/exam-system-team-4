@@ -11,6 +11,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Features\Diplomas\EnrollDiploma\Interfaces\**" />
+    <Content Remove="Features\Diplomas\EnrollDiploma\Interfaces\**" />
+    <EmbeddedResource Remove="Features\Diplomas\EnrollDiploma\Interfaces\**" />
+    <None Remove="Features\Diplomas\EnrollDiploma\Interfaces\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
@@ -37,7 +44,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Diplomas\EnrollDiploma\Interfaces\" />
     <Folder Include="Features\Identity\ForgotPassword\View Models\" />
     <Folder Include="Features\Identity\Login\View Models\" />
     <Folder Include="Features\Identity\RefreshToken\View Models\" />

@@ -1,16 +1,11 @@
 using exam_system.Common.Middleware;
 using exam_system.Domain.Entities.Diplomas;
-using exam_system.Features.Shared;
 using exam_system.Persistence;
 using exam_system.Persistence.Context;
 using exam_system.Persistence.DataAccess;
-using FluentValidation;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using static exam_system.Persistence.Configurations.StudentQuestionAnswerConfiguration;
+using static exam_system.Persistence.Context.AppDbContextSeed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,34 +15,26 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddPersistenceServices(builder.Configuration);
 
-builder.Services.AddApplicationServices(builder.Configuration);
-
-builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
-
-builder.Services.AddTransient(
-    typeof(IPipelineBehavior<,>),
-    typeof(ValidationBehavior<,>));
+builder.Services.AddApplicationServices();
 
 var app = builder.Build();
-//app.UseMiddleware<ExceptionMiddleware>();
 
 // Seed Database automatically on startup
 using (var scope = app.Services.CreateScope())
 {
-
-    /////
-    var roleManager =
-        scope.ServiceProvider
-            .GetRequiredService<RoleManager<IdentityRole>>();
-
-    await IdentitySeeder.SeedRolesAsync(roleManager); 
-
 
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
+        if (app.Environment.IsDevelopment())
+        {
+            await context.Database.MigrateAsync();
+        }
+
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        await IdentitySeeder.SeedRolesAsync(roleManager);
         await AppDbContextSeed.SeedAsync(context, logger);
     }
     catch (Exception ex)
