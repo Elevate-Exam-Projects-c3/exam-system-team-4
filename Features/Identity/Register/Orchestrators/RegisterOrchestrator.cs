@@ -1,9 +1,8 @@
 ﻿using exam_system.Features.Identity.Register.Commands;
 using exam_system.Features.Identity.Register.Dtos.response;
-using exam_system.Features.Identity.Register.Handlers;
 using exam_system.Features.Identity.Register.Notification;
-using exam_system.Features.Identity.Register.Queries;
 using exam_system.Features.Shared;
+using exam_system.Features.Shared.UserLookup.Queries;
 using MediatR;
 
 namespace exam_system.Features.Identity.Register.Orchestrators
@@ -21,8 +20,23 @@ namespace exam_system.Features.Identity.Register.Orchestrators
         public async Task<RequestResponse<RegisterResponse>> Handle(RegisterCommand request,
             CancellationToken cancellationToken)
         {
-            // -- email exict
-            var emailexist =await _mediator.Send(new EmailExistsQuery(request.Email),cancellationToken);
+            // Check whether an account already uses this email.
+            var findUserResult = await _mediator.Send( new FindUserByEmailQuery(request.Email),cancellationToken);
+
+            if (!findUserResult.Success)
+            {
+                return RequestResponse<RegisterResponse>.Fail(
+                    findUserResult.Message,
+                    findUserResult.StatusCode,
+                    findUserResult.Errors);
+            }
+
+            if (findUserResult.Data is not null)
+            {
+                return RequestResponse<RegisterResponse>.Fail(
+                    "Email is already registered.",
+                    409);
+            }
 
             // 1. Create the application user.
 
@@ -31,7 +45,9 @@ namespace exam_system.Features.Identity.Register.Orchestrators
 
             if (!createUserResult.Success)
             {
-                return RequestResponse<RegisterResponse>.Fail(createUserResult.Message,createUserResult.StatusCode,
+                return RequestResponse<RegisterResponse>.Fail(
+                    createUserResult.Message,
+                    createUserResult.StatusCode,
                     createUserResult.Errors);
             }
 
@@ -45,12 +61,15 @@ namespace exam_system.Features.Identity.Register.Orchestrators
             }
 
             // 2. Assign the Student role to the created user.
+
             var addRoleResult = await _mediator.Send( new AddUserToRoleCommand(user.UserId),cancellationToken);
 
             if (!addRoleResult.Success)
             {
-                return RequestResponse<RegisterResponse>.Fail(addRoleResult.Message,
-                    addRoleResult.StatusCode, addRoleResult.Errors);
+                return RequestResponse<RegisterResponse>.Fail(
+                    addRoleResult.Message,
+                    addRoleResult.StatusCode,
+                    addRoleResult.Errors);
             }
             // 3. Create the student profile.
 
@@ -66,8 +85,7 @@ namespace exam_system.Features.Identity.Register.Orchestrators
 
 
             // 4. Create the OTP.
-            var emailVerifyResult = await _mediator.Send(
-                new CreateEmailVerificationOtpCommand(
+            var emailVerifyResult = await _mediator.Send(new CreateEmailVerificationOtpCommand(
                     user.UserId,
                     user.Email),
                 cancellationToken);
@@ -89,14 +107,12 @@ namespace exam_system.Features.Identity.Register.Orchestrators
                     500);
             }
 
-            // 5. Send the email now, before the transaction commits.
+            // 5. Send the email now, 
             await _mediator.Publish(
-                new SendVerificationOtpNotification(Email: otpData.Email,FullName: user.FullName,Otp: otpData.PlainOtp),
-                cancellationToken);
+                new SendVerificationOtpNotification( otpData.Email,user.FullName,otpData.PlainOtp),cancellationToken);
 
             // 6. Return only public registration data.
-            return RequestResponse<RegisterResponse>.Created(new RegisterResponse(Email: user.Email,
-                    RequiresEmailConfirmation: true),
+            return RequestResponse<RegisterResponse>.Created(new RegisterResponse(user.Email,true),
                 "Account created successfully. Email confirmation is required.");
         }
        

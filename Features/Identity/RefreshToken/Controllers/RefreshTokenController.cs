@@ -1,42 +1,41 @@
-using exam_system.Features.Identity.Login.Commands;
-using exam_system.Features.Identity.Login.View_Models;
+using exam_system.Features.Identity.RefreshTokens.Commands;
 using exam_system.Features.Identity.Shared;
 using exam_system.Features.Shared.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace exam_system.Features.Identity.Login.Controllers;
+namespace exam_system.Features.Identity.RefreshTokens.Controllers;
 
 [Route("api/auth")]
 [ApiController]
 [AllowAnonymous]
-public sealed class LoginController : ControllerBase
+public sealed class RefreshTokenController : ControllerBase
 {
     private readonly IMediator _mediator;
 
-    public LoginController(IMediator mediator)
+    public RefreshTokenController(IMediator mediator)
     {
         _mediator = mediator;
     }
 
-    [HttpPost("login")]
-    public async Task<IActionResult> Login(
-        [FromBody] LoginViewModel viewModel,
-        CancellationToken cancellationToken)
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
     {
         Response.Headers.CacheControl = "no-store";
         Response.Headers.Pragma = "no-cache";
 
-        var command = new LoginCommand(viewModel.Email, viewModel.Password);
+        var command = new RefreshSessionCommand(RefreshTokenCookie.Read(Request));
         var result = await _mediator.Send(command, cancellationToken);
+
         if (result.Success)
         {
+            // Send returns after the transaction commits the token rotation.
             var tokens = result.Data!;
             RefreshTokenCookie.Append(Response, tokens.RefreshToken, tokens.RefreshTokenExpiresAt);
         }
 
-        // TokenResult's refresh fields are excluded from JSON with JsonIgnore.
+        // TokenResult excludes the refresh token and its expiry from JSON.
         var response = EndpointResponse<TokenResult>.FromResult(result);
 
         return StatusCode(response.StatusCode, response);

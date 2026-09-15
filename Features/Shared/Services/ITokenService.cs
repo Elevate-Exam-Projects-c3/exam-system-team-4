@@ -6,6 +6,7 @@ namespace exam_system.Features.Shared.Services;
 public interface ITokenService
 {
     TokenResult GenerateTokens(ApplicationUser user, IEnumerable<string> roles);
+    TokenResult GenerateTokens(string userId, string email, IEnumerable<string> roles, Guid? studentId);
     string HashRefreshToken(string token);
 }
 

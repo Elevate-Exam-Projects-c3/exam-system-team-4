@@ -2,12 +2,14 @@
 using exam_system.Features.Identity.Register.Dtos.response;
 using exam_system.Features.Identity.Register.ViewModels;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace exam_system.Features.Identity.Register.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[AllowAnonymous]
 public class RegisterController : ControllerBase
 {
     private readonly IMediator _mediator;

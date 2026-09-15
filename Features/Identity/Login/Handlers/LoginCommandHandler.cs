@@ -6,6 +6,7 @@ using exam_system.Features.Shared.Services;
 using exam_system.Persistence.DataAccess;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace exam_system.Features.Identity.Login.Handlers;
 
@@ -34,7 +35,10 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, RequestR
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var user = await _userManager.FindByEmailAsync(request.Email.Trim());
+        var normalizedEmail = _userManager.NormalizeEmail(request.Email.Trim());
+        var user = await _userManager.Users
+            .Include(user => user.Student)
+            .SingleOrDefaultAsync(user => user.NormalizedEmail == normalizedEmail, cancellationToken);
         if (user is null)
             return RequestResponse<TokenResult>.Fail(InvalidCredentials, 401);
 

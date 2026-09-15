@@ -118,3 +118,5 @@ All API endpoints return standard envelope structures found in `Features/Shared/
    await _unitOfWork.SaveChangesAsync(cancellationToken);
    ```
 4. **Validation**: Add validation rules inside `Validators/` inheriting from `AbstractValidator<TCommand>`. MediatR’s `ValidationBehavior` will automatically execute it before reaching your handler.
+
+
