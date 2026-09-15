@@ -1,11 +1,15 @@
+using exam_system.Common.Middleware;
 using exam_system.Domain.Entities.Diplomas;
 using exam_system.Features.Shared;
 using exam_system.Persistence;
 using exam_system.Persistence.Context;
 using exam_system.Persistence.DataAccess;
-using Microsoft.AspNetCore.Identity;
+using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using static exam_system.Persistence.Configurations.StudentQuestionAnswerConfiguration;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -64,6 +68,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<ValidationExceptionHandlingMiddleware>();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
