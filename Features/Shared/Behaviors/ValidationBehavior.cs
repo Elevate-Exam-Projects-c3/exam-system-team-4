@@ -39,11 +39,11 @@ public sealed class ValidationBehavior<TRequest, TResponse>
             failures.AddRange(result.Errors);
         }
 
-        // لو فيه أخطاء أوقف الـPipeline.
-        if (failures.Count > 0)
-        {
-            throw new ValidationException(failures);
-        }
+        //// لو فيه أخطاء أوقف الـPipeline.
+        //if (failures.Count > 0)
+        //{
+        //    throw new ValidationException(failures);
+        //}
 
         // البيانات صحيح انتقل إلى TransactionBehavior.
         return await next();
