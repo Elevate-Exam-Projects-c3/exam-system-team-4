@@ -4,7 +4,7 @@ using MediatR;
 
 namespace exam_system.Features.Attempts.StartAttempt.Orchestrators
 {
-    public record StartAttemptOrchestrator(Guid QuizId,Guid studentId) :
+    public record StartAttemptOrchestrator(Guid QuizId) :
         IRequest<RequestResponse<StartAttemptResponseDto>>;
     
 }

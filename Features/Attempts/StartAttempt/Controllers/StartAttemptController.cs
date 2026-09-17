@@ -17,12 +17,12 @@ namespace exam_system.Features.Attempts.StartAttempt.Controllers
         {
             _mediator = mediator;
         }
-        //[Authorize]
+        [Authorize]
         [HttpPost("api/quizzes/{id}/attempts")]
-        public async Task<IActionResult> StartAttempt(Guid id,Guid studentId  , CancellationToken cancellationToken)
+        public async Task<IActionResult> StartAttempt(Guid id, CancellationToken cancellationToken)
         {
             
-          var response= await _mediator.Send(new StartAttemptOrchestrator(id, studentId),cancellationToken);
+          var response= await _mediator.Send(new StartAttemptOrchestrator(id),cancellationToken);
             if(response is not null&& response.Success&&response.Data is not null)
             {
                 var viewModel = new StartAttemptResponseViewModel

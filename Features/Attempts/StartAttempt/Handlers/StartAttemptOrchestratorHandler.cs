@@ -26,9 +26,16 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
 
         public async Task<RequestResponse<StartAttemptResponseDto>> Handle(StartAttemptOrchestrator request, CancellationToken cancellationToken)
         {
+            var studentIdClaim = _httpContextAccessor.HttpContext?.User.FindFirstValue("studentId");
+
+            if (!Guid.TryParse(studentIdClaim, out var studentId))
+            {
+                return RequestResponse<StartAttemptResponseDto>.Fail(
+                    "Student identity is invalid.",
+                    401);
+            }
             //db=>get quiz =>status , Diploma Id, StartDate, EndtDate, DurationMinutes,MaxAttempts
             var quizRequest = await _mediator.Send(new GetQuizForStartAttemptQuery(request.QuizId), cancellationToken);
-            //var user = _httpContextAccessor.HttpContext?.User?.FindFirstValue(");
             //v=>validate quiz
             //v=>Check if the quiz exists and  
 
@@ -73,7 +80,8 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
                     });
 
             //db=> Is student enroll at quiz Diploma
-            var enrollmentResult = await _mediator.Send(new IsStudentEnrolledInDiplomaQuery(request.studentId, quizRequest.Data.DiplomaId));
+
+            var enrollmentResult = await _mediator.Send(new IsStudentEnrolledInDiplomaQuery(studentId, quizRequest.Data.DiplomaId));
             if (enrollmentResult is null || !enrollmentResult.Success)
             {
                 return RequestResponse<StartAttemptResponseDto>.Fail(
@@ -94,7 +102,7 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
             }
             ////Send request
             //db=>Check for an existing InProgress attempt for the current student and quiz.
-            var inProgressAttempt = await _mediator.Send(new GetInProgressQuizAttemptQuery(request.studentId, quizRequest.Data.QuizId));
+            var inProgressAttempt = await _mediator.Send(new GetInProgressQuizAttemptQuery(studentId, quizRequest.Data.QuizId));
             //v=>existing attempt is found → return it and don't create another.
             if (inProgressAttempt is null )
             {
@@ -125,7 +133,7 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
 
 
             //db=>Count Submitted +TimedOut attempts for this user and quiz.
-            var submittedAndTimeoutAttemptsCountResult = await _mediator.Send(new GetSubmittedAndTimedOutAttemptsCountQuery(request.studentId, request.QuizId));
+            var submittedAndTimeoutAttemptsCountResult = await _mediator.Send(new GetSubmittedAndTimedOutAttemptsCountQuery(studentId, request.QuizId));
             //v=>Check MaxAttempts
             if (submittedAndTimeoutAttemptsCountResult is null || !submittedAndTimeoutAttemptsCountResult.Success)
             {
@@ -149,7 +157,7 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
             //db=>CreateQuizAttemptCommand //create quiz attempt
             var createAttemptDto = new
             {
-                StudentId = request.studentId,
+                StudentId = studentId,
                 QuizId = request.QuizId,
                 StartTime = now,
                 Deadline = now.AddMinutes(quizRequest.Data.DurationMinutes),
