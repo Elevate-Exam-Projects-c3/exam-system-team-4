@@ -19,6 +19,8 @@ public class QuizAttempt : BaseEntity
     public DateTime? SubmittedAt { get; set; }
     public double? Score { get; set; }
     public bool? Passed { get; set; }
+    public int ShuffleSeed { get; set; }
+    public Guid? LastAnsweredQuestionId { get; set; }
 
     // Navigations
     public ICollection<StudentQuestionAnswer> Answers { get; set; } = new List<StudentQuestionAnswer>();

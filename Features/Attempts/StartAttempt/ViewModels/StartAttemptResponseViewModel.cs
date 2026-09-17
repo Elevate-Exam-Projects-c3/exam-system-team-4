@@ -10,9 +10,8 @@ namespace exam_system.Features.Attempts.StartAttempt.ViewModels
         public DateTimeOffset StartTime { get; init; }
 
         public DateTimeOffset Deadline { get; init; }
-
+        public Guid? LastAnsweredQuestionId { get; set; }
         public int DurationMinutes { get; init; }
-
         public List<AttemptQuestionViewModel> Questions { get; set; } = [];
     }
 }

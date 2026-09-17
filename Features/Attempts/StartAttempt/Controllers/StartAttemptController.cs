@@ -3,6 +3,7 @@ using exam_system.Features.Attempts.StartAttempt.ViewModels;
 using exam_system.Features.Quizzes.AdminCreateQuiz.ViewModels;
 using exam_system.Features.Shared;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace exam_system.Features.Attempts.StartAttempt.Controllers
@@ -16,7 +17,7 @@ namespace exam_system.Features.Attempts.StartAttempt.Controllers
         {
             _mediator = mediator;
         }
-
+        //[Authorize]
         [HttpPost("api/quizzes/{id}/attempts")]
         public async Task<IActionResult> StartAttempt(Guid id,Guid studentId  , CancellationToken cancellationToken)
         {
@@ -30,11 +31,14 @@ namespace exam_system.Features.Attempts.StartAttempt.Controllers
                     QuizId = response.Data.QuizId,
                     StartTime = response.Data.StartTime,
                     Deadline = response.Data.Deadline,
+                    LastAnsweredQuestionId=response.Data.LastAnsweredQuestionId,
                     DurationMinutes = response.Data.DurationMinutes,
+                    
                     Questions = response.Data.Questions.Select(question => new AttemptQuestionViewModel
                     {
                         Id = question.Id,
                         Text = question.Text,
+                        SelectedOptionId = question.SelectedOptionId,
                         Options = question.Options.Select(opt => new AttemptOptionViewModel
                         {
                             Id = opt.Id,
