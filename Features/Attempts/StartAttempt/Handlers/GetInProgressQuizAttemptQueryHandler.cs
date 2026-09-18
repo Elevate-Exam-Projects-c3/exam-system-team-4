@@ -20,7 +20,7 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
 
         public async Task<RequestResponse<StartAttemptResponseDto>> Handle(GetInProgressQuizAttemptQuery request, CancellationToken cancellationToken)
         {
-            var inProgressAttempt = await _quizAttempRepo.GetAll()
+            var inProgressAttempt = await _quizAttempRepo.GetAll().AsNoTracking()
                 .Where(attempt => attempt.StudentId == request.StudentId &&
                                 attempt.QuizId == request.QuizId &&
                                 attempt.Status == AttemptStatus.InProgress)
@@ -28,8 +28,10 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
                 {
                     AttemptId = attempt.Id,
                     StartTime = attempt.StartTime,
-                    Deadline = attempt.Deadline
-
+                    Deadline = attempt.Deadline,
+                    ShuffleSeed = attempt.ShuffleSeed,
+                    QuizId=attempt.QuizId,
+                    LastAnsweredQuestionId=attempt.LastAnsweredQuestionId
                 }).FirstOrDefaultAsync(cancellationToken);
             if (inProgressAttempt is not null)
                 return RequestResponse<StartAttemptResponseDto>.Ok(inProgressAttempt);

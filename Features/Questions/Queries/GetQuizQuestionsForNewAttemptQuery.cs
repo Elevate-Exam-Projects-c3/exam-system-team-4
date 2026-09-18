@@ -4,7 +4,7 @@ using MediatR;
 
 namespace exam_system.Features.Questions.Queries
 {
-    public record GetQuizQuestionsAndOptionsForStartAttemptQuery(Guid QuizId):
+    public record GetQuizQuestionsForNewAttemptQuery(Guid QuizId):
                         IRequest<RequestResponse<List<AttemptQuestionDto>>>;
     
     

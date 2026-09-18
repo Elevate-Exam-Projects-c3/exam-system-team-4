@@ -2,14 +2,16 @@
 {
     public class StartAttemptResponseDto
     {
-        public Guid AttemptId { get; init; }
-        public Guid QuizId { get; init; }
+        public Guid AttemptId { get; set; }
+        public Guid QuizId { get; set; }
 
-        public DateTimeOffset StartTime { get; init; }
+        public DateTimeOffset StartTime { get; set; }
 
-        public DateTimeOffset Deadline { get; init; }
+        public DateTimeOffset Deadline { get; set; }
 
-        public int DurationMinutes { get; init; }
+        public int DurationMinutes { get; set; }
+        public int ShuffleSeed { get; init; }
+        public Guid? LastAnsweredQuestionId { get; set; }
 
         public List<AttemptQuestionDto> Questions { get; set; } = [];
     }

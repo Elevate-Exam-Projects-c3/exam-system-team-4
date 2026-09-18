@@ -15,21 +15,31 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
     public class StartAttemptOrchestratorHandler : IRequestHandler<StartAttemptOrchestrator, RequestResponse<StartAttemptResponseDto>>
     {
         private readonly IMediator _mediator;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public StartAttemptOrchestratorHandler(IMediator mediator)
+
+        public StartAttemptOrchestratorHandler(IMediator mediator, IHttpContextAccessor httpContextAccessor)
         {
             _mediator = mediator;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<RequestResponse<StartAttemptResponseDto>> Handle(StartAttemptOrchestrator request, CancellationToken cancellationToken)
         {
+            var studentIdClaim = _httpContextAccessor.HttpContext?.User.FindFirstValue("studentId");
+
+            if (!Guid.TryParse(studentIdClaim, out var studentId))
+            {
+                return RequestResponse<StartAttemptResponseDto>.Fail(
+                    "Student identity is invalid.",
+                    401);
+            }
             //db=>get quiz =>status , Diploma Id, StartDate, EndtDate, DurationMinutes,MaxAttempts
             var quizRequest = await _mediator.Send(new GetQuizForStartAttemptQuery(request.QuizId), cancellationToken);
-
             //v=>validate quiz
             //v=>Check if the quiz exists and  
-            
-            if (quizRequest is null ||!quizRequest.Success || quizRequest.Data is null)
+
+            if (quizRequest is null || !quizRequest.Success || quizRequest.Data is null)
             {
                 return RequestResponse<StartAttemptResponseDto>.Fail(
                     quizRequest?.Message ?? "Failed to validate Quiz.",
@@ -50,7 +60,7 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
 
             //v=>Check dates
             //Is Date Ended ... Is Start Date Is not Started yet
-            var now= DateTime.UtcNow;
+            var now = DateTime.UtcNow;
             if (quizRequest.Data!.EndDate <= now)
                 return RequestResponse<StartAttemptResponseDto>.Fail(
                     "Quiz has already ended.",
@@ -68,14 +78,15 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
                     {
                         ["StartDate"] = ["Quiz has not started yet."]
                     });
-         
+
             //db=> Is student enroll at quiz Diploma
-            var enrollmentResult = await _mediator.Send(new IsStudentEnrolledInDiplomaQuery(request.studentId, quizRequest.Data.DiplomaId));
-            if (enrollmentResult is null|| !enrollmentResult.Success)
+
+            var enrollmentResult = await _mediator.Send(new IsStudentEnrolledInDiplomaQuery(studentId, quizRequest.Data.DiplomaId));
+            if (enrollmentResult is null || !enrollmentResult.Success)
             {
                 return RequestResponse<StartAttemptResponseDto>.Fail(
                     enrollmentResult?.Message ?? "Failed to validate student enrollment.",
-                    enrollmentResult?.StatusCode??500,
+                    enrollmentResult?.StatusCode ?? 500,
                     enrollmentResult?.Errors);
             }
 
@@ -91,26 +102,49 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
             }
             ////Send request
             //db=>Check for an existing InProgress attempt for the current student and quiz.
-            var inProgressAttempt=await _mediator.Send(new GetInProgressQuizAttemptQuery(request.studentId, quizRequest.Data.QuizId));
+            var inProgressAttempt = await _mediator.Send(new GetInProgressQuizAttemptQuery(studentId, quizRequest.Data.QuizId));
             //v=>existing attempt is found → return it and don't create another.
-            if (inProgressAttempt.Success)
+            if (inProgressAttempt is null )
+            {
+                return RequestResponse<StartAttemptResponseDto>.Fail(
+                    inProgressAttempt?.Message ??
+                    "Failed to check existing attempt.",
+                    inProgressAttempt?.StatusCode ?? 500,
+                    inProgressAttempt?.Errors);
+            }
+
+            if (inProgressAttempt.Data is not null)
+            {
+                var questionResponse = await _mediator.Send(new GetAttemptQuestionsQuery(quizRequest.Data.QuizId,
+                                                                                        inProgressAttempt.Data.AttemptId),
+                                                            cancellationToken);
+                if (questionResponse is null || !questionResponse.Success || questionResponse.Data is null)
+                {
+                    return RequestResponse<StartAttemptResponseDto>.Fail("Failed to retrieve quiz questions and options.");
+                }
+                ShuffleQuestionsAndOptions(questionResponse.Data,
+                                           inProgressAttempt.Data.ShuffleSeed);
+                inProgressAttempt.Data.Questions = questionResponse.Data;
+                inProgressAttempt.Data.DurationMinutes = quizRequest.Data.DurationMinutes;
+
                 return inProgressAttempt;
+            }
             /////////////////////////
-            
+
 
             //db=>Count Submitted +TimedOut attempts for this user and quiz.
-            var submittedAndTimeoutAttemptsCountResult = await _mediator.Send(new GetSubmittedAndTimedOutAttemptsCountQuery(request.studentId, request.QuizId));
+            var submittedAndTimeoutAttemptsCountResult = await _mediator.Send(new GetSubmittedAndTimedOutAttemptsCountQuery(studentId, request.QuizId));
             //v=>Check MaxAttempts
-            if (submittedAndTimeoutAttemptsCountResult is null||!submittedAndTimeoutAttemptsCountResult.Success)
+            if (submittedAndTimeoutAttemptsCountResult is null || !submittedAndTimeoutAttemptsCountResult.Success)
             {
                 return RequestResponse<StartAttemptResponseDto>.Fail(
                     submittedAndTimeoutAttemptsCountResult?.Message ?? "Failed to count attempts.",
-                    submittedAndTimeoutAttemptsCountResult?.StatusCode??500,
+                    submittedAndTimeoutAttemptsCountResult?.StatusCode ?? 500,
                     submittedAndTimeoutAttemptsCountResult?.Errors);
             }
             var submittedAndTimeoutAttemptsCount = submittedAndTimeoutAttemptsCountResult.Data;
-            if (quizRequest.Data.MaxAttempts is not null && 
-                quizRequest.Data.MaxAttempts<= submittedAndTimeoutAttemptsCount)
+            if (quizRequest.Data.MaxAttempts is not null &&
+                quizRequest.Data.MaxAttempts <= submittedAndTimeoutAttemptsCount)
             {
                 return RequestResponse<StartAttemptResponseDto>.Fail(
                     "Attempts exhausted!",
@@ -121,55 +155,79 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
                     });
             }
             //db=>CreateQuizAttemptCommand //create quiz attempt
-           var isCreatedResponse=  await _mediator.Send(new CreateQuizAttemptCommand(
-                                           request.studentId,
-                                           request.QuizId,
-                                           StartTime: now,
-                                           Deadline: now.AddMinutes(quizRequest.Data.DurationMinutes),
-                                           attemptStatus: AttemptStatus.InProgress
+            var createAttemptDto = new
+            {
+                StudentId = studentId,
+                QuizId = request.QuizId,
+                StartTime = now,
+                Deadline = now.AddMinutes(quizRequest.Data.DurationMinutes),
+                Status = AttemptStatus.InProgress,
+                ShuffleSeed = Random.Shared.Next()
+            };
+            var CreatedResponse = await _mediator.Send(new CreateQuizAttemptCommand(
+                                           createAttemptDto.StudentId,
+                                           createAttemptDto.QuizId,
+                                           StartTime: createAttemptDto.StartTime,
+                                           Deadline: createAttemptDto.Deadline,
+                                           attemptStatus: createAttemptDto.Status,
+                                           ShuffleSeed: createAttemptDto.ShuffleSeed
                                            ));
-            if (isCreatedResponse is null || !isCreatedResponse.Success)
+            if (CreatedResponse is null || !CreatedResponse.Success || CreatedResponse.Data == Guid.Empty)
             {
                 return RequestResponse<StartAttemptResponseDto>.Fail(
-                    isCreatedResponse?.Message ?? "Failed to create quiz attempt.",
-                    isCreatedResponse?.StatusCode ?? 500,
-                    isCreatedResponse?.Errors);
+                    CreatedResponse?.Message ?? "Failed to create quiz attempt.",
+                    CreatedResponse?.StatusCode ?? 500,
+                    CreatedResponse?.Errors);
             }
-            
+
             //db=>Result=>Load Quiz Questions + Options
-           
-            var attempt = await _mediator.Send(new GetInProgressQuizAttemptQuery(request.studentId, quizRequest.Data.QuizId));
-            if(attempt is null  || !attempt.Success || attempt.Data is null)
+            StartAttemptResponseDto attempt = new StartAttemptResponseDto
             {
-                return RequestResponse<StartAttemptResponseDto>.Fail(
-                        attempt?.Message ?? "In-progress attempt not found.",
-                        attempt?.StatusCode ?? 404,
-                        attempt?.Errors);
-            }
-            var questionsAndOptionsResult = await _mediator.Send(new GetQuizQuestionsAndOptionsForStartAttemptQuery(quizRequest.Data.QuizId),
+                AttemptId = CreatedResponse.Data,
+                StartTime = createAttemptDto.StartTime,
+                Deadline = createAttemptDto.Deadline,
+                ShuffleSeed = createAttemptDto.ShuffleSeed,
+                QuizId = createAttemptDto.QuizId,
+                DurationMinutes = quizRequest.Data.DurationMinutes
+            };
+
+            //db
+            var questionsAndOptionsResult = await _mediator.Send(new GetQuizQuestionsForNewAttemptQuery(quizRequest.Data.QuizId),
                                             cancellationToken);
-            if (questionsAndOptionsResult is null || questionsAndOptionsResult.Data is null)
+            if (questionsAndOptionsResult is null || !questionsAndOptionsResult.Success || questionsAndOptionsResult.Data is null)
             {
                 return RequestResponse<StartAttemptResponseDto>.Fail("Failed to retrieve quiz questions and options.");
             }
-                FisherYatesShuffle<AttemptQuestionDto>(questionsAndOptionsResult.Data);
-            foreach (var question in questionsAndOptionsResult.Data)
-            {
-                FisherYatesShuffle(question.Options);
-            }
-            attempt.Data.Questions=questionsAndOptionsResult.Data;
-            return RequestResponse< StartAttemptResponseDto>.Ok(attempt.Data);
+            ShuffleQuestionsAndOptions(questionsAndOptionsResult.Data,
+                                       attempt.ShuffleSeed);
+            attempt.Questions = questionsAndOptionsResult.Data;
+            return RequestResponse<StartAttemptResponseDto>.Ok(attempt);
 
         }
+        private void ShuffleQuestionsAndOptions(
+                            List<AttemptQuestionDto> questions,
+                            int shuffleSeed)
+        {
+            var random = new Random(shuffleSeed);
 
-        private void FisherYatesShuffle<T>(IList<T> items)
+            FisherYatesShuffle(questions, random);
+
+            foreach (var question in questions)
+            {
+                FisherYatesShuffle(question.Options, random);
+            }
+        }
+
+        private void FisherYatesShuffle<T>(IList<T> items, Random random)
         {
             for (int i = items.Count - 1; i > 0; i--)
             {
-                int j = Random.Shared.Next(0, i + 1);
+                int j = random.Next(0, i + 1);
 
                 (items[i], items[j]) = (items[j], items[i]);
             }
         }
+
+
     }
 }

@@ -8,7 +8,8 @@ namespace exam_system.Features.Attempts.StartAttempt.Commands
                                            Guid QuizId,
                                            DateTime StartTime,
                                            DateTime Deadline,
-                                           AttemptStatus attemptStatus
-                                           ) : IRequest<RequestResponse>;
+                                           AttemptStatus attemptStatus,
+                                           int ShuffleSeed
+                                           ) : IRequest<RequestResponse<Guid>>;
     
 }

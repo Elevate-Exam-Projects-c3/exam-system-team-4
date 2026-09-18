@@ -6,8 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>exam_system</RootNamespace>
 
+	  <NuGetAudit>false</NuGetAudit>
 
-    <UserSecretsId>e43944cd-bcc9-4891-9e53-50aa875f7982</UserSecretsId>
+	  <UserSecretsId>e43944cd-bcc9-4891-9e53-50aa875f7982</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

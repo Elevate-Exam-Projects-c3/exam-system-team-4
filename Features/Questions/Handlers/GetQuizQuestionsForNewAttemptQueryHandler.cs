@@ -8,21 +8,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace exam_system.Features.Questions.Handlers
 {
-    public class GetQuizQuestionsAndOptionsForStartAttemptQueryHandler
+    public class GetQuizQuestionsForNewAttemptQueryHandler
     : IRequestHandler<
-        GetQuizQuestionsAndOptionsForStartAttemptQuery,
+        Queries.GetQuizQuestionsForNewAttemptQuery,
         RequestResponse<List<AttemptQuestionDto>>>
     {
         private readonly IGenericRepository<Question> _questionRepo;
 
-        public GetQuizQuestionsAndOptionsForStartAttemptQueryHandler(
+        public GetQuizQuestionsForNewAttemptQueryHandler(
             IGenericRepository<Question> questionRepo)
         {
             _questionRepo = questionRepo;
         }
 
         public async Task<RequestResponse<List<AttemptQuestionDto>>> Handle(
-            GetQuizQuestionsAndOptionsForStartAttemptQuery request,
+            Queries.GetQuizQuestionsForNewAttemptQuery request,
             CancellationToken cancellationToken)
         {
             var questions = await _questionRepo.GetAll()
@@ -31,7 +31,6 @@ namespace exam_system.Features.Questions.Handlers
                 {
                     Id = q.Id,
                     Text = q.Text,
-
                     Options = q.Options
                         .Select(o => new AttemptOptionDto
                         {
