@@ -21,17 +21,15 @@ namespace exam_system.Features.Diplomas.AdminCreateDiploma.Controllers
             _mediator = mediator;
         }
 
-      
-
         [HttpPost]
         public async Task<IActionResult> CreateDiploma([FromBody] UpdateDiplomaViewModel viewModel)
         {
            
             //send method here excute the request then the handler will be called to handle the request and return the result
-            var createdDiploma = await _mediator.Send(new CreateDiplomaCommand(viewModel.Title, viewModel.Description));
+            var result = await _mediator.Send(new CreateDiplomaCommand(viewModel.Title, viewModel.Description));
            
             //return the created diploma
-            return Ok("Diploma Created Successfully");
+            return StatusCode(result.StatusCode , result);
         }
     }
 }

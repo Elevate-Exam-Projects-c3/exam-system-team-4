@@ -1,6 +1,7 @@
 ﻿using exam_system.Features.Diplomas.AdminCreateDiploma.ViewModels;
 using exam_system.Features.Diplomas.AdminUpdateDiploma.Commands;
 using exam_system.Features.Diplomas.AdminUpdateDiploma.DTO;
+using exam_system.Features.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,13 +21,9 @@ namespace exam_system.Features.Diplomas.AdminUpdateDiploma.Controllers
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update( Guid id,[FromBody] UpdateDiplomaViewModel viewModel)
         {
-            var command = new UpdateDiplomaCommand(
-                id,
-                viewModel.Title,
-                viewModel.Description);
-            var result = await _mediator.Send(command);
+            var result = await _mediator.Send(new UpdateDiplomaCommand(id, viewModel.Title, viewModel.Description));
 
-            return Ok("Diploma updated successfully");
+            return StatusCode(result.StatusCode , result);
         }
 
     }
