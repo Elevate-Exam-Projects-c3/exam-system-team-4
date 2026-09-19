@@ -5,7 +5,6 @@ using exam_system.Persistence.Context;
 using exam_system.Persistence.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using static exam_system.Persistence.Context.AppDbContextSeed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,7 +33,6 @@ using (var scope = app.Services.CreateScope())
         }
 
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        await IdentitySeeder.SeedRolesAsync(roleManager);
         await AppDbContextSeed.SeedAsync(context, logger);
     }
     catch (Exception ex)
@@ -85,6 +83,7 @@ app.MapGet("/api/test/diplomas", async (IGenericRepository<Diploma> diplomaRepo,
 })
 .WithName("GetTestDiplomas")
 .WithTags("Test");
+
 
 app.MapControllers();
 
