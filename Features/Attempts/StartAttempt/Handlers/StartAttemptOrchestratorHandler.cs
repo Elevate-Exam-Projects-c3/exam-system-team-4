@@ -4,9 +4,11 @@ using exam_system.Features.Attempts.StartAttempt.DTOs;
 using exam_system.Features.Attempts.StartAttempt.Orchestrators;
 using exam_system.Features.Attempts.StartAttempt.Queries;
 using exam_system.Features.Diplomas.SharedRequests.Queries;
+using exam_system.Features.Jobs.Attempts;
 using exam_system.Features.Questions.Queries;
 using exam_system.Features.Quizzes.Shared.Queries;
 using exam_system.Features.Shared;
+using Hangfire;
 using MediatR;
 using System.Security.Claims;
 
@@ -201,6 +203,9 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
             ShuffleQuestionsAndOptions(questionsAndOptionsResult.Data,
                                        attempt.ShuffleSeed);
             attempt.Questions = questionsAndOptionsResult.Data;
+
+            BackgroundJob.Schedule<TimedOutQuizAttemptJob>(job => job.Execute(attempt.AttemptId),
+                                                           attempt.Deadline - DateTime.UtcNow);
             return RequestResponse<StartAttemptResponseDto>.Ok(attempt);
 
         }

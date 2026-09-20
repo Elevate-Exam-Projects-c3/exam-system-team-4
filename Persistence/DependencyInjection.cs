@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Hangfire;
 
 namespace exam_system.Persistence;
 
@@ -91,11 +92,11 @@ public static class DependencyInjection
 
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-     
+
         return services;
     }
 
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
         // MediatR
         services.AddMediatR(typeof(Program).Assembly);
@@ -136,10 +137,23 @@ public static class DependencyInjection
             };
         });
 
+
+        services.AddHanggfireServices(configuration);
+
         return services;
     }
 
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
-        => services.AddApplicationServices();
+    private static IServiceCollection AddHanggfireServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        //Hangfire
+        services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(configuration.GetConnectionString("HangfireDb")));
+        services.AddHangfireServer();
+        return services;
 
+    }
+   
 }

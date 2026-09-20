@@ -3,8 +3,9 @@ using exam_system.Domain.Entities.Diplomas;
 using exam_system.Persistence;
 using exam_system.Persistence.Context;
 using exam_system.Persistence.DataAccess;
-using Microsoft.EntityFrameworkCore;
+using Hangfire;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using static exam_system.Persistence.Context.AppDbContextSeed;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,7 +16,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddPersistenceServices(builder.Configuration);
 
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
 
 var app = builder.Build();
 
@@ -56,6 +57,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseMiddleware<ValidationExceptionHandlingMiddleware>();
+
+//In the middleware pipeline:
+//app.UseHangfireDashboard("/hangfire"); // protect this in production!
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
