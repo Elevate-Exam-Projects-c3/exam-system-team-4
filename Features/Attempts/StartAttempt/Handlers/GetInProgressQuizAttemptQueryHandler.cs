@@ -23,7 +23,8 @@ namespace exam_system.Features.Attempts.StartAttempt.Handlers
             var inProgressAttempt = await _quizAttempRepo.GetAll().AsNoTracking()
                 .Where(attempt => attempt.StudentId == request.StudentId &&
                                 attempt.QuizId == request.QuizId &&
-                                attempt.Status == AttemptStatus.InProgress)
+                                attempt.Status == AttemptStatus.InProgress&&
+                                DateTime.UtcNow<=attempt.Deadline)
                 .Select(attempt => new StartAttemptResponseDto
                 {
                     AttemptId = attempt.Id,
