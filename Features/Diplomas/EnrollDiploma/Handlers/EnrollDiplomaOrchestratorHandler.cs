@@ -20,26 +20,15 @@ namespace exam_system.Features.Diplomas.EnrollDiploma.Handlers
         {
             var isAlreadyEnrolledResult = await _mediator.Send(new CheckStudentEnrollmentCommand(request.StudentId, request.DiplomaId), cancellationToken);
 
-            if (!isAlreadyEnrolledResult.Success)
-            {
-                return RequestResponse<bool>.Fail(isAlreadyEnrolledResult.Message);
-            }
-
             if (isAlreadyEnrolledResult.Data)
             {
                 return RequestResponse<bool>.Fail("Student already enrolled in this diploma before");
             }
 
-            var hasPublishedQuizResult = await _mediator.Send(
-                new CheckPublishedQuizCommand(request.DiplomaId),
-                cancellationToken);
+            var hasPublishedQuizResult = await _mediator.Send( new CheckPublishedQuizCommand(request.DiplomaId), cancellationToken);
 
-            if (!hasPublishedQuizResult.Success)
-            {
-                return RequestResponse<bool>.Fail(hasPublishedQuizResult.Message);
-            }
 
-            if (hasPublishedQuizResult.Data)
+            if (!hasPublishedQuizResult.Data)
             {
 
                 return RequestResponse<bool>.Fail("Diploma is not available");

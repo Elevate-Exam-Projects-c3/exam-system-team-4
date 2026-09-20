@@ -35,7 +35,6 @@ using (var scope = app.Services.CreateScope())
         }
 
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        await IdentitySeeder.SeedRolesAsync(roleManager);
         await AppDbContextSeed.SeedAsync(context, logger);
     }
     catch (Exception ex)
@@ -89,6 +88,7 @@ app.MapGet("/api/test/diplomas", async (IGenericRepository<Diploma> diplomaRepo,
 })
 .WithName("GetTestDiplomas")
 .WithTags("Test");
+
 
 app.MapControllers();
 

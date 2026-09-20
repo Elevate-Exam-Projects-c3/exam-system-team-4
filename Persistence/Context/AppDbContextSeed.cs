@@ -322,17 +322,5 @@ public static class AppDbContextSeed
             throw;
         }
     }
-    // create student role
-    public static class IdentitySeeder
-    {
-        public static async Task SeedRolesAsync(
-            RoleManager<IdentityRole> roleManager)
-        {
-            const string studentRole = "Student";
-            if (!await roleManager.RoleExistsAsync(studentRole))
-            {
-                await roleManager.CreateAsync( new IdentityRole(studentRole));
-            }
-        }
-    }
+    
 }

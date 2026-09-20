@@ -1,5 +1,6 @@
 ﻿using exam_system.Domain.Entities.Diplomas;
 using exam_system.Features.Diplomas.AdminDeleteDiploma.Commands;
+using exam_system.Features.Shared;
 using exam_system.Persistence.DataAccess;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace exam_system.Features.Diplomas.AdminDeleteDiploma.Handlers
 {
-    public class DeleteDiplomaCommandHandler : IRequestHandler<DeleteDiplomaCommand, Unit>
+    public class DeleteDiplomaCommandHandler : IRequestHandler<DeleteDiplomaCommand, RequestResponse<Unit>>
     {
         private readonly IGenericRepository<Diploma> _repository;
         private readonly IUnitOfWork _unitOfWork;
@@ -17,26 +18,24 @@ namespace exam_system.Features.Diplomas.AdminDeleteDiploma.Handlers
             _repository = repository;
             _unitOfWork = unitOfWork;
         }
-        public async Task<Unit> Handle(DeleteDiplomaCommand request, CancellationToken cancellationToken)
+        public async Task<RequestResponse<Unit>> Handle(DeleteDiplomaCommand request, CancellationToken cancellationToken)
         {
-            var diploma = await _repository.GetByIdAsync(request.Id , cancellationToken);
+            var diploma = await _repository.GetByIdAsync( request.Id, cancellationToken, d => d.Enrollments);
 
-            if (diploma == null) 
+            if (diploma == null || diploma.IsDeleted) 
             { 
-                throw new Exception("Diploma Not Found");
+                return RequestResponse<Unit>.Fail("Diploma Is Not Found" , 400);
             }
 
             if (diploma.Enrollments.Any()) 
             { 
-                throw new Exception("Cannot delete diploma with active enrollments");
+                return RequestResponse<Unit>.Fail("Cannot delete diploma with active enrollments" , 409);
             }
-            
-              
-            diploma.IsDeleted = true;
-            diploma.UpdatedAt = DateTime.Now;
+
+            _repository.Delete(diploma);
 
            await _unitOfWork.SaveChangesAsync(cancellationToken);
-           return Unit.Value;
+           return RequestResponse<Unit>.Ok(Unit.Value , "Diploma Deleted Successfully");
 
         }
 

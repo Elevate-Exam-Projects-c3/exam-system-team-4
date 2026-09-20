@@ -26,15 +26,14 @@ namespace exam_system.Features.Diplomas.BrowseDiplomas.Handlers
         public async Task<RequestResponse<PaginatedResult<BrowseDiplomaDto>>> Handle(BrowseDiplomasQuery request, CancellationToken cancellationToken)
         {
             //get diplomas with published quizzes Only
-            var diplomasWithQuizzes =  _repository.GetAll()
-                .Where(d => d.Quizzes.Any(q => q.Status == QuizStatus.Published));
+            var diplomasWithQuizzes = await _repository.GetAll()
+                .Where(d => d.Quizzes.Any(q => q.Status == QuizStatus.Published)).ToListAsync();
 
-            var TotalCount = diplomasWithQuizzes.CountAsync(cancellationToken);
+            var TotalCount = diplomasWithQuizzes.Count;
 
             var items = diplomasWithQuizzes
-                .OrderByDescending(d => d.CreatedAt)
-                .Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize).Select(i => new BrowseDiplomaDto
+
+                .Select(i => new BrowseDiplomaDto
                 {
                     Id = i.Id,
                     Title = i.Title,
@@ -48,7 +47,9 @@ namespace exam_system.Features.Diplomas.BrowseDiplomas.Handlers
                              a.Status == AttemptStatus.TimedOut)))
                                 : 0
 
-                }).ToListAsync(cancellationToken);
+                }).Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize).OrderByDescending(d => d.CreatedAt).ToList();
+                
 
             var results = new PaginatedResult<BrowseDiplomaDto>(items, TotalCount, request.PageNumber, request.PageSize);
 
