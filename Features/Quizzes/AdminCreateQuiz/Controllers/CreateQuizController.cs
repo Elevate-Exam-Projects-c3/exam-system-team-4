@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace exam_system.Features.Quizzes.AdminCreateQuiz.Controllers
 {
     [ApiController]
-    [Authorize(Roles = SD.Admin)]
+    //[Authorize(Roles = SD.Admin)]
     public class CreateQuizController: ControllerBase
     {
         private readonly IMediator _mediator;
