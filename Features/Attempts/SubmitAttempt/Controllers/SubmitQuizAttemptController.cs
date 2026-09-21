@@ -11,7 +11,7 @@ namespace exam_system.Features.Attempts.SubmitAttempt.Controllers
 {
     [ApiController]
     [Route("api/attempts")]
-    //[Authorize]
+    [Authorize]
     public class SubmitQuizAttemptController : ControllerBase
     {
         private readonly IMediator _mediator;
