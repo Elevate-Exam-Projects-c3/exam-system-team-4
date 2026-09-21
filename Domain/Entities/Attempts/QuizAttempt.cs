@@ -17,7 +17,7 @@ public class QuizAttempt : BaseEntity
     public DateTime StartTime { get; set; } = DateTime.UtcNow;
     public DateTime Deadline { get; set; }
     public DateTime? SubmittedAt { get; set; }
-    public double? Score { get; set; }
+    public decimal? Score { get; set; }
     public bool? Passed { get; set; }
     public int ShuffleSeed { get; set; }
     public Guid? LastAnsweredQuestionId { get; set; }

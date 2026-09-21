@@ -236,7 +236,7 @@ public static class AppDbContextSeed
                     StartTime = DateTime.UtcNow.AddDays(-10).AddMinutes(-30),
                     Deadline = DateTime.UtcNow.AddDays(-10),
                     SubmittedAt = DateTime.UtcNow.AddDays(-10).AddMinutes(-5),
-                    Score = 100.0,
+                    Score = 100.0m,
                     Passed = true,
                     CreatedAt = DateTime.UtcNow.AddDays(-10)
                 };
